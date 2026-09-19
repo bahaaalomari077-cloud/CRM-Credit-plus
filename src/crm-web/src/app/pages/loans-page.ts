@@ -12,7 +12,7 @@ import {
 } from '../core/banking.models';
 import { BankingService } from '../core/banking.service';
 import { CrmStore } from '../core/crm-store.service';
-import { LocaleDatePipe, LocaleMoneyPipe } from '../core/i18n/format.pipes';
+import { LocaleMoneyPipe } from '../core/i18n/format.pipes';
 import { I18nService, TranslationKey } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
 
@@ -34,7 +34,7 @@ const blankLoan = (): LoanForm => ({
 
 @Component({
   selector: 'app-loans-page',
-  imports: [FormsModule, RouterLink, TranslatePipe, LocaleDatePipe, LocaleMoneyPipe],
+  imports: [FormsModule, RouterLink, TranslatePipe, LocaleMoneyPipe],
   templateUrl: './loans-page.html',
 })
 export class LoansPage {
