@@ -1,0 +1,127 @@
+<section class="heading">
+  <div>
+    <label>نظرة شاملة · {{ today | date: 'EEEE، d MMMM' }}</label>
+    <h1>صباح الخير، أحمد 👋</h1>
+    <p>هذه هي أولويات المبيعات وفرص النمو اليوم.</p>
+  </div>
+  <div class="period">
+    @for (period of periods; track period) {
+      <button [class.selected]="period === periods[0]">{{ period }}</button>
+    }
+  </div>
+</section>
+
+<section class="stats">
+  @for (stat of stats(); track stat.label) {
+    <article>
+      <div>
+        <span class="stat-icon" [ngClass]="stat.tone">{{ stat.icon }}</span>
+      </div>
+      <p>{{ stat.label }}</p>
+      <h2>{{ stat.value }}@if (stat.unit) {<small>{{ stat.unit }}</small>}</h2>
+      <footer><small>محسوبة مباشرة من بيانات الـ API</small></footer>
+    </article>
+  }
+</section>
+
+<section class="grid">
+  <article class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>خط المبيعات</h2>
+        <p>متابعة قيمة الصفقات حسب المرحلة</p>
+      </div>
+      <a routerLink="/deals">عرض الصفقات ←</a>
+    </div>
+    <div class="chart">
+      @for (stage of store.dashboard().pipeline; track stage.id) {
+        <div class="stage">
+          <span>
+            <i [ngClass]="stage.accent"></i>
+            <b>{{ stageLabel(stage.name) }}</b>
+            <small>{{ stage.dealCount }} صفقات</small>
+          </span>
+          <div><i [ngClass]="stage.accent" [style.width.%]="barWidth(stage.value)"></i></div>
+          <strong>{{ stage.value | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+      } @empty {
+        <p class="empty">لا توجد صفقات بعد.</p>
+      }
+    </div>
+    <footer class="total">
+      إجمالي خط المبيعات المفتوح
+      <b>{{ store.dashboard().pipelineValue | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</b>
+    </footer>
+  </article>
+
+  <article class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>مهام اليوم</h2>
+        <p>{{ store.dashboard().openActivities }} مهام بحاجة للمتابعة</p>
+      </div>
+      <a routerLink="/activities" class="round">+</a>
+    </div>
+    <div class="tasks">
+      @for (activity of store.dashboard().activities; track activity.id) {
+        <button [class.done]="activity.isCompleted" (click)="toggle(activity)">
+          <i class="check">✓</i>
+          <i class="activity-icon">{{ typeIcon(activity.type) }}</i>
+          <span>
+            <b>{{ activity.title }}</b>
+            <small>{{ activity.relatedTo || typeLabel(activity.type) }} · {{ activity.dueAt | date: 'h:mm a' }}</small>
+          </span>
+          <em>{{ initials(activity.owner) }}</em>
+        </button>
+      } @empty {
+        <p class="empty">لا توجد مهام مفتوحة. عمل رائع!</p>
+      }
+    </div>
+    <a class="all" routerLink="/activities">عرض كل المهام ←</a>
+  </article>
+</section>
+
+<section class="panel deals">
+  <div class="panel-title">
+    <div>
+      <h2>الصفقات المفتوحة</h2>
+      <p>{{ visibleDeals().length }} فرصة تحتاج متابعة</p>
+    </div>
+    <a routerLink="/deals">عرض الكل ←</a>
+  </div>
+  <div class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>الصفقة</th>
+          <th>المرحلة</th>
+          <th>القيمة</th>
+          <th>احتمالية الإغلاق</th>
+          <th>تاريخ الإغلاق</th>
+          <th>المالك</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (deal of visibleDeals(); track deal.id) {
+          <tr>
+            <td>
+              <div class="company">
+                <i>{{ deal.company[0] }}</i>
+                <span><b>{{ deal.company }}</b><small>{{ deal.name }}</small></span>
+              </div>
+            </td>
+            <td><em [ngClass]="deal.stage.toLowerCase()">{{ stageLabel(deal.stage) }}</em></td>
+            <td><b>{{ deal.value | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</b></td>
+            <td>
+              <span class="prob"><i><b [style.width.%]="deal.probability"></b></i>{{ deal.probability }}%</span>
+            </td>
+            <td>{{ deal.expectedCloseDate | date: 'd MMM' }}</td>
+            <td><i class="owner">{{ initials(deal.owner) }}</i></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="empty">لا توجد صفقات مطابقة.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

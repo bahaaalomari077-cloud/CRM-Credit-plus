@@ -1,0 +1,23 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## Runtime data store (seeded on first run)
+App_Data/
+*.tmp
+
+## Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+## Tooling output
+.playwright-mcp/
+
+## OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,75 @@
+@HostAddress = http://localhost:5233
+
+### Dashboard summary
+GET {{HostAddress}}/api/crm/dashboard
+Accept: application/json
+
+### Leads
+GET {{HostAddress}}/api/crm/leads
+Accept: application/json
+
+### Leads filtered
+GET {{HostAddress}}/api/crm/leads?search=noor&status=Qualified
+Accept: application/json
+
+### Create a lead
+POST {{HostAddress}}/api/crm/leads
+Content-Type: application/json
+
+{
+  "fullName": "Nour Al Haddad",
+  "company": "Noor Industries",
+  "email": "nour@noorindustries.com",
+  "phone": "+962 7 9000 5566",
+  "source": "Referral"
+}
+
+### Deals
+GET {{HostAddress}}/api/crm/deals
+Accept: application/json
+
+### Deal stages
+GET {{HostAddress}}/api/crm/deals/stages
+Accept: application/json
+
+### Create a deal
+POST {{HostAddress}}/api/crm/deals
+Content-Type: application/json
+
+{
+  "name": "Equipment leasing",
+  "company": "Noor Industries",
+  "contact": "Nour Al Haddad",
+  "value": 26500,
+  "stage": "Qualified",
+  "probability": 45,
+  "expectedCloseDate": "2026-10-15"
+}
+
+### Move a deal to another stage
+PATCH {{HostAddress}}/api/crm/deals/00000000-0000-0000-0000-000000000000/stage
+Content-Type: application/json
+
+{
+  "stage": "Won"
+}
+
+### Activities
+GET {{HostAddress}}/api/crm/activities?completed=false
+Accept: application/json
+
+### Create an activity
+POST {{HostAddress}}/api/crm/activities
+Content-Type: application/json
+
+{
+  "title": "Follow up on pricing",
+  "type": "Call",
+  "relatedTo": "Noor Industries",
+  "dueAt": "2026-09-22T10:00:00+03:00"
+}
+
+### Complete an activity
+PATCH {{HostAddress}}/api/crm/activities/00000000-0000-0000-0000-000000000000/complete
+
+###

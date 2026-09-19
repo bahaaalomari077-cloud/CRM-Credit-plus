@@ -1,0 +1,91 @@
+<section class="heading">
+  <div>
+    <label>المتابعة اليومية</label>
+    <h1>الأنشطة</h1>
+    <p>
+      {{ store.openActivities().length }} مهمة مفتوحة
+      @if (overdueCount()) {
+        · <b class="overdue-count">{{ overdueCount() }} متأخرة</b>
+      }
+    </p>
+  </div>
+  <div class="heading-actions">
+    <div class="period">
+      <button [class.selected]="filter() === 'open'" (click)="filter.set('open')">مفتوحة</button>
+      <button [class.selected]="filter() === 'done'" (click)="filter.set('done')">مكتملة</button>
+      <button [class.selected]="filter() === 'all'" (click)="filter.set('all')">الكل</button>
+    </div>
+    <button class="quick" (click)="openCreate()">+ إضافة مهمة</button>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title">
+    <div>
+      <h2>قائمة المهام</h2>
+      <p>{{ visible().length }} مهمة معروضة</p>
+    </div>
+    <a (click)="store.loadActivities()">تحديث ↻</a>
+  </div>
+  <div class="activity-list">
+    @for (activity of visible(); track activity.id) {
+      <div class="activity-row" [class.done]="activity.isCompleted" [class.overdue]="isOverdue(activity)">
+        <button class="toggle" (click)="toggle(activity)" [title]="activity.isCompleted ? 'إعادة فتح' : 'إنهاء'">
+          <i class="check">✓</i>
+        </button>
+        <i class="activity-icon">{{ typeIcon(activity.type) }}</i>
+        <span class="activity-text">
+          <b>{{ activity.title }}</b>
+          <small>{{ typeLabel(activity.type) }}@if (activity.relatedTo) { · {{ activity.relatedTo }} }</small>
+        </span>
+        <span class="due">
+          {{ activity.dueAt | date: 'd MMM · h:mm a' }}
+          @if (isOverdue(activity)) { <em>متأخرة</em> }
+        </span>
+        <button class="danger" (click)="remove(activity)" title="حذف">🗑</button>
+      </div>
+    } @empty {
+      <p class="empty">لا توجد مهام في هذا التصنيف.</p>
+    }
+  </div>
+</section>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="showForm.set(false)">
+    <form class="crm-form" (click)="$event.stopPropagation()" (ngSubmit)="save()">
+      <div>
+        <h2>إضافة مهمة</h2>
+        <button type="button" (click)="showForm.set(false)">×</button>
+      </div>
+      <label>
+        عنوان المهمة
+        <input required name="title" [ngModel]="form().title" (ngModelChange)="update('title', $event)" placeholder="مثال: متابعة عرض السعر" />
+      </label>
+      <div class="pair">
+        <label>
+          النوع
+          <select name="type" [ngModel]="form().type" (ngModelChange)="update('type', $event)">
+            @for (type of types; track type) {
+              <option [value]="type">{{ typeLabel(type) }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          مرتبطة بـ
+          <input name="relatedTo" [ngModel]="form().relatedTo" (ngModelChange)="update('relatedTo', $event)" placeholder="اسم الشركة" />
+        </label>
+      </div>
+      <label>
+        موعد الاستحقاق
+        <input type="datetime-local" name="dueAt" [ngModel]="form().dueAt" (ngModelChange)="update('dueAt', $event)" />
+      </label>
+      @if (store.error(); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+      <footer>
+        <button type="button" (click)="showForm.set(false)">إلغاء</button>
+        <button type="submit" [disabled]="store.loading()">حفظ المهمة</button>
+      </footer>
+    </form>
+  </div>
+}

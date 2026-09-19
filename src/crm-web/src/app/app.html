@@ -1,0 +1,81 @@
+<div class="app-shell" dir="rtl">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/dashboard">
+      <span class="brand-mark">C+</span>
+      <span>Credit<span>Plus</span></span>
+    </a>
+    <button class="workspace">
+      <span>CP</span>
+      <b>Credit Plus<small>مساحة المبيعات</small></b>
+      <i>⌄</i>
+    </button>
+
+    <nav>
+      @for (item of nav; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active">
+          <i>{{ item.icon }}</i>{{ item.name }}
+          @if (item.badge && item.badge()) {
+            <em>{{ item.badge!() }}</em>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="divider"></div>
+    <p>الإدارة</p>
+    <nav>
+      <a class="disabled" title="قريبًا"><i>▥</i>التقارير</a>
+      <a class="disabled" title="قريبًا"><i>⚙</i>الإعدادات</a>
+    </nav>
+
+    <footer>
+      <div class="help">
+        <strong>✦ هل تحتاج مساعدة؟</strong>
+        <small>بياناتك محفوظة في App_Data/crm.json وتبقى بعد إعادة تشغيل الـAPI.</small>
+      </div>
+      <div class="profile">
+        <span>AK</span>
+        <b>Ahmad Khalil<small>مدير المبيعات</small></b>
+      </div>
+    </footer>
+  </aside>
+
+  <main>
+    <header>
+      <div class="crumb">CRM <b>/</b> <strong>Credit Plus</strong></div>
+      <div class="actions">
+        <label class="search">
+          ⌕
+          <input
+            [value]="store.search()"
+            (input)="onSearch($any($event.target).value)"
+            placeholder="ابحث عن أي شيء..."
+          />
+          <kbd>⌘ K</kbd>
+        </label>
+        <button class="quick" (click)="showQuickAdd.set(!showQuickAdd())">+ <span>إضافة جديد</span></button>
+        @if (showQuickAdd()) {
+          <div class="quick-menu">
+            <a routerLink="/leads" (click)="showQuickAdd.set(false)">+ عميل محتمل</a>
+            <a routerLink="/deals" (click)="showQuickAdd.set(false)">◇ صفقة</a>
+            <a routerLink="/activities" (click)="showQuickAdd.set(false)">✓ مهمة</a>
+          </div>
+        }
+      </div>
+    </header>
+
+    @if (store.offline()) {
+      <div class="banner">
+        ⚠ تعذر الاتصال بالـ API على المنفذ 5233. شغّل <code>dotnet run</code> داخل CreditPlus.Crm.Api ثم
+        <button (click)="store.refreshAll()">أعد المحاولة</button>
+      </div>
+    } @else if (store.error(); as message) {
+      <div class="banner error">
+        ⚠ {{ message }}
+        <button (click)="store.dismissError()">إغلاق</button>
+      </div>
+    }
+
+    <router-outlet />
+  </main>
+</div>

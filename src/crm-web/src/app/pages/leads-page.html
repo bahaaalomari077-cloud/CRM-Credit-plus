@@ -1,0 +1,133 @@
+<section class="heading">
+  <div>
+    <label>إدارة العملاء</label>
+    <h1>العملاء المحتملون</h1>
+    <p>أضف، تابع، ونظم كل فرص البيع من مكان واحد.</p>
+  </div>
+  <button class="quick" (click)="openCreate()">+ إضافة عميل</button>
+</section>
+
+<section class="panel leads">
+  <div class="panel-title">
+    <div>
+      <h2>سجل العملاء</h2>
+      <p>{{ store.leads().length }} عميل محفوظين في قاعدة بيانات المشروع</p>
+    </div>
+    <div class="toolbar">
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); reload()" name="statusFilter">
+        <option value="">كل الحالات</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ statusLabel(status) }}</option>
+        }
+      </select>
+      <a (click)="reload()">تحديث ↻</a>
+    </div>
+  </div>
+  <div class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>الاسم</th>
+          <th>الشركة</th>
+          <th>البريد الإلكتروني</th>
+          <th>الهاتف</th>
+          <th>المصدر</th>
+          <th>الحالة</th>
+          <th>أُضيف في</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (lead of store.leads(); track lead.id) {
+          <tr>
+            <td><b>{{ lead.fullName }}</b></td>
+            <td>{{ lead.company }}</td>
+            <td><span class="ltr">{{ lead.email || '—' }}</span></td>
+            <td><span class="ltr">{{ lead.phone || '—' }}</span></td>
+            <td>{{ lead.source }}</td>
+            <td><em [class]="lead.status.toLowerCase()">{{ statusLabel(lead.status) }}</em></td>
+            <td>{{ lead.createdAt | date: 'd MMM' }}</td>
+            <td class="row-actions">
+              <button (click)="openEdit(lead)" title="تعديل">✎</button>
+              <button class="danger" (click)="remove(lead)" title="حذف">🗑</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="empty">لا يوجد عملاء بعد. أضف أول فرصة بيع الآن.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="showForm.set(false)">
+    <form class="crm-form" (click)="$event.stopPropagation()" (ngSubmit)="save()">
+      <div>
+        <h2>{{ editingId() ? 'تعديل العميل' : 'إضافة عميل محتمل' }}</h2>
+        <button type="button" (click)="showForm.set(false)">×</button>
+      </div>
+      <label>
+        الاسم الكامل
+        <input
+          required
+          name="fullName"
+          [ngModel]="form().fullName"
+          (ngModelChange)="update('fullName', $event)"
+          placeholder="مثال: نور الحداد"
+        />
+      </label>
+      <label>
+        الشركة
+        <input
+          required
+          name="company"
+          [ngModel]="form().company"
+          (ngModelChange)="update('company', $event)"
+          placeholder="اسم الشركة"
+        />
+      </label>
+      <label>
+        البريد الإلكتروني
+        <input
+          type="email"
+          name="email"
+          [ngModel]="form().email"
+          (ngModelChange)="update('email', $event)"
+          placeholder="name@company.com"
+        />
+      </label>
+      <label>
+        رقم الهاتف
+        <input name="phone" [ngModel]="form().phone" (ngModelChange)="update('phone', $event)" placeholder="+962 ..." />
+      </label>
+      <div class="pair">
+        <label>
+          المصدر
+          <select name="source" [ngModel]="form().source" (ngModelChange)="update('source', $event)">
+            @for (source of sources; track source) {
+              <option [value]="source">{{ source }}</option>
+            }
+          </select>
+        </label>
+        @if (editingId()) {
+          <label>
+            الحالة
+            <select name="status" [ngModel]="form().status" (ngModelChange)="update('status', $event)">
+              @for (status of statuses; track status) {
+                <option [value]="status">{{ statusLabel(status) }}</option>
+              }
+            </select>
+          </label>
+        }
+      </div>
+      @if (store.error(); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+      <footer>
+        <button type="button" (click)="showForm.set(false)">إلغاء</button>
+        <button type="submit" [disabled]="store.loading()">حفظ العميل</button>
+      </footer>
+    </form>
+  </div>
+}
