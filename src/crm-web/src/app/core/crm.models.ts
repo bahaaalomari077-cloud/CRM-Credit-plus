@@ -11,6 +11,8 @@ export interface Lead {
   status: LeadStatus;
   owner: string;
   createdAt: string;
+  kycStatus: string;
+  riskRating: string;
 }
 
 export interface Deal {

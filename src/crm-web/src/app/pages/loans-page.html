@@ -1,0 +1,185 @@
+<section class="heading">
+  <div>
+    <label>{{ 'loans.eyebrow' | t }}</label>
+    <h1>{{ 'loans.title' | t }}</h1>
+    <p>{{ 'loans.subtitle' | t }}</p>
+  </div>
+  @if (auth.canWrite()) {
+    <button class="quick" (click)="openCreate()">{{ 'loans.add' | t }}</button>
+  }
+</section>
+
+@if (error(); as message) {
+  <div class="banner error">⚠ {{ message }}<button (click)="error.set(null)">{{ 'app.close' | t }}</button></div>
+}
+
+<section class="stats">
+  <article>
+    <p>{{ 'loans.count' | t: { count: loans().length } }}</p>
+    <h2>{{ loans().length }}</h2>
+  </article>
+  <article>
+    <p>{{ 'loans.totalRequested' | t }}</p>
+    <h2>{{ totalRequested() | lmoney }}</h2>
+  </article>
+  <article>
+    <p>{{ 'loans.totalApproved' | t }}</p>
+    <h2>{{ totalApproved() | lmoney }}</h2>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-title">
+    <div>
+      <h2>{{ 'loans.title' | t }}</h2>
+      <p>{{ 'loans.count' | t: { count: loans().length } }}</p>
+    </div>
+    <div class="toolbar">
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); reload()" name="statusFilter">
+        <option value="">{{ 'loans.allStatuses' | t }}</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ statusLabel(status) }}</option>
+        }
+      </select>
+      <a (click)="reload()">{{ 'common.refresh' | t }} ↻</a>
+    </div>
+  </div>
+
+  <div class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'loans.reference' | t }}</th>
+          <th>{{ 'loans.customer' | t }}</th>
+          <th>{{ 'loans.product' | t }}</th>
+          <th>{{ 'loans.amount' | t }}</th>
+          <th>{{ 'loans.term' | t }}</th>
+          <th>{{ 'loans.rate' | t }}</th>
+          <th>{{ 'loans.monthly' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (loan of loans(); track loan.id) {
+          <tr>
+            <td><b class="ltr">{{ loan.reference }}</b></td>
+            <td>
+              <a class="link" [routerLink]="['/customers', loan.leadId]">{{ loan.customerName }}</a>
+              <small class="block-sub">{{ loan.company }}</small>
+            </td>
+            <td>{{ productLabel(loan.product) }}</td>
+            <td><b>{{ loan.amount | lmoney }}</b></td>
+            <td>{{ loan.termMonths }}</td>
+            <td><span class="ltr">{{ loan.interestRate }}%</span></td>
+            <td>{{ loan.monthlyPayment | lmoney }}</td>
+            <td><em [class]="loan.status.toLowerCase()">{{ statusLabel(loan.status) }}</em></td>
+            <td class="row-actions">
+              @if (auth.canWrite()) {
+                @if (movesFor(loan).length && auth.canReadAudit()) {
+                  <button (click)="openMove(loan)" [title]="'loans.moveTo' | t">⇄</button>
+                }
+                <button class="danger" (click)="remove(loan)" [title]="'common.delete' | t">🗑</button>
+              } @else {
+                <span class="muted-dash">—</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="9" class="empty">{{ 'loans.empty' | t }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="showForm.set(false)">
+    <form class="crm-form" (click)="$event.stopPropagation()" (ngSubmit)="save()">
+      <div>
+        <h2>{{ 'loans.formAdd' | t }}</h2>
+        <button type="button" (click)="showForm.set(false)">×</button>
+      </div>
+
+      <label>
+        {{ 'loans.customer' | t }}
+        <select required name="leadId" [ngModel]="form().leadId" (ngModelChange)="update('leadId', $event)">
+          <option value="">{{ 'loans.selectCustomer' | t }}</option>
+          @for (lead of store.leads(); track lead.id) {
+            <option [value]="lead.id">{{ lead.fullName }} — {{ lead.company }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        {{ 'loans.product' | t }}
+        <select name="product" [ngModel]="form().product" (ngModelChange)="update('product', $event)">
+          @for (product of products; track product) {
+            <option [value]="product">{{ productLabel(product) }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="pair">
+        <label>
+          {{ 'loans.amount' | t }}
+          <input type="number" min="1" name="amount" [ngModel]="form().amount" (ngModelChange)="update('amount', +$event)" />
+        </label>
+        <label>
+          {{ 'loans.term' | t }}
+          <input type="number" min="1" max="480" name="termMonths" [ngModel]="form().termMonths" (ngModelChange)="update('termMonths', +$event)" />
+        </label>
+      </div>
+
+      <label>
+        {{ 'loans.rate' | t }}
+        <input type="number" min="0" max="100" step="0.25" name="interestRate" [ngModel]="form().interestRate" (ngModelChange)="update('interestRate', +$event)" />
+      </label>
+
+      @if (error(); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+
+      <footer>
+        <button type="button" (click)="showForm.set(false)">{{ 'common.cancel' | t }}</button>
+        <button type="submit" [disabled]="loading()">{{ 'loans.save' | t }}</button>
+      </footer>
+    </form>
+  </div>
+}
+
+@if (moveTarget(); as loan) {
+  <div class="modal-backdrop" (click)="moveTarget.set(null)">
+    <div class="crm-form" (click)="$event.stopPropagation()">
+      <div>
+        <h2>{{ loan.reference }}</h2>
+        <button type="button" (click)="moveTarget.set(null)">×</button>
+      </div>
+
+      <div class="kv">
+        <div><span>{{ 'loans.customer' | t }}</span><b>{{ loan.customerName }}</b></div>
+        <div><span>{{ 'loans.amount' | t }}</span><b>{{ loan.amount | lmoney }}</b></div>
+        <div><span>{{ 'common.status' | t }}</span><b>{{ statusLabel(loan.status) }}</b></div>
+      </div>
+
+      <label>
+        {{ 'loans.decisionNotes' | t }}
+        <textarea rows="3" name="notes" [ngModel]="moveNotes()" (ngModelChange)="moveNotes.set($event)"></textarea>
+      </label>
+
+      @if (error(); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+
+      <div class="choice-row">
+        @for (status of movesFor(loan); track status) {
+          <button type="button" (click)="move(status)" [disabled]="loading()">
+            {{ statusLabel(status) }}
+          </button>
+        } @empty {
+          <p class="form-note">{{ 'loans.noMoves' | t }}</p>
+        }
+      </div>
+    </div>
+  </div>
+}

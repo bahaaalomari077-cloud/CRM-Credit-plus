@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AdminService } from '../core/admin.service';
 import { EmailMessage } from '../core/auth.models';
 import { AuthService } from '../core/auth.service';
@@ -30,7 +31,7 @@ const blankLead = (): LeadForm => ({
 
 @Component({
   selector: 'app-leads-page',
-  imports: [FormsModule, TranslatePipe, LocaleDatePipe],
+  imports: [FormsModule, RouterLink, TranslatePipe, LocaleDatePipe],
   templateUrl: './leads-page.html',
 })
 export class LeadsPage {
@@ -59,6 +60,10 @@ export class LeadsPage {
 
   protected statusLabel(status: string): string {
     return this.i18n.translate(`status.${status}` as TranslationKey);
+  }
+
+  protected kycLabel(status: string): string {
+    return this.i18n.translate(`kycStatus.${status}` as TranslationKey);
   }
 
   protected sourceLabel(source: string): string {

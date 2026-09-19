@@ -1,0 +1,314 @@
+@if (overview(); as data) {
+  <section class="heading">
+    <div>
+      <a class="link back" routerLink="/leads">{{ 'customer.back' | t }}</a>
+      <h1>{{ data.lead.fullName }}</h1>
+      <p>{{ data.lead.company }} · <span class="ltr">{{ data.lead.email }}</span></p>
+    </div>
+    <div class="heading-actions">
+      <em [class]="data.kyc.status.toLowerCase()">{{ label('kycStatus', data.kyc.status) }}</em>
+      <em [class]="'risk-' + data.lead.riskRating.toLowerCase()">{{ label('risk', data.lead.riskRating) }}</em>
+    </div>
+  </section>
+
+  @if (error(); as message) {
+    <div class="banner error">⚠ {{ message }}<button (click)="error.set(null)">{{ 'app.close' | t }}</button></div>
+  }
+
+  <section class="customer-top">
+    <article class="panel score-card">
+      <div class="score-ring">
+        <svg viewBox="0 0 80 80" aria-hidden="true">
+          <circle cx="40" cy="40" r="34" class="score-track" />
+          <circle
+            cx="40"
+            cy="40"
+            r="34"
+            class="score-value"
+            [class]="'score-' + data.scoreBand.toLowerCase()"
+            [style.stroke-dashoffset]="scoreOffset()"
+          />
+        </svg>
+        <b>{{ data.score }}</b>
+      </div>
+      <div class="score-body">
+        <h2>{{ 'customer.score' | t }}</h2>
+        <em [class]="'band-' + data.scoreBand.toLowerCase()">{{ label('band', data.scoreBand) }}</em>
+        <small>{{ 'customer.scoreWhy' | t }}</small>
+        <ul class="score-reasons">
+          @for (reason of data.scoreReasons; track reason) {
+            <li [class.negative]="reason.startsWith('-')">{{ reason }}</li>
+          }
+        </ul>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title"><div><h2>{{ 'customer.overview' | t }}</h2></div></div>
+      <div class="kv">
+        <div><span>{{ 'customer.totalDeals' | t }}</span><b>{{ data.totalDealValue | lmoney }}</b></div>
+        <div><span>{{ 'customer.totalLoans' | t }}</span><b>{{ data.totalLoanValue | lmoney }}</b></div>
+        <div><span>{{ 'kyc.verified' | t }}</span><b>{{ data.kyc.verified }}</b></div>
+        <div><span>{{ 'kyc.missing' | t }}</span><b [class.bad-text]="data.kyc.missing > 0">{{ data.kyc.missing }}</b></div>
+        <div><span>{{ 'common.status' | t }}</span><b>{{ label('status', data.lead.status) }}</b></div>
+        <div><span>{{ 'leads.source' | t }}</span><b>{{ label('source', data.lead.source) }}</b></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="tabs">
+      @for (item of tabs; track item.id) {
+        <button [class.on]="tab() === item.id" (click)="tab.set(item.id)">
+          {{ item.key | t }}
+          @if (item.count()) { <span>{{ item.count() }}</span> }
+        </button>
+      }
+    </div>
+
+    @switch (tab()) {
+      @case ('kyc') {
+        <div class="tab-head">
+          <p class="form-note">{{ 'kyc.requiredHint' | t }}</p>
+          @if (auth.canWrite()) {
+            <button class="quick" (click)="openDocumentForm()">{{ 'kyc.addDocument' | t }}</button>
+          }
+        </div>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'kyc.documentType' | t }}</th>
+                <th>{{ 'kyc.reference' | t }}</th>
+                <th>{{ 'common.status' | t }}</th>
+                <th>{{ 'kyc.expiresOn' | t }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (document of data.kyc.documents; track document.id) {
+                <tr>
+                  <td><b>{{ label('docType', document.documentType) }}</b></td>
+                  <td><span class="ltr">{{ document.reference || ('common.none' | t) }}</span></td>
+                  <td><em [class]="document.status.toLowerCase()">{{ label('kycStatus', document.status) }}</em></td>
+                  <td>{{ document.expiresOn ? (document.expiresOn | ldate: 'short') : ('common.none' | t) }}</td>
+                  <td class="row-actions">
+                    @if (auth.canReadAudit()) {
+                      <button (click)="verify(document, 'Verified')" [title]="'kyc.verify' | t">✔</button>
+                      <button class="danger" (click)="verify(document, 'Rejected')" [title]="'kyc.reject' | t">✕</button>
+                    }
+                    @if (auth.canWrite()) {
+                      <button class="danger" (click)="removeDocument(document)" [title]="'common.delete' | t">🗑</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="empty">{{ 'kyc.empty' | t }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (!auth.canReadAudit()) {
+          <p class="form-note">{{ 'kyc.verifyOnly' | t }}</p>
+        }
+      }
+
+      @case ('deals') {
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'dashboard.deal' | t }}</th>
+                <th>{{ 'common.stage' | t }}</th>
+                <th>{{ 'common.value' | t }}</th>
+                <th>{{ 'dashboard.closeDate' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (deal of data.deals; track deal.id) {
+                <tr>
+                  <td><b>{{ deal.name }}</b></td>
+                  <td><em [class]="deal.stage.toLowerCase()">{{ label('stage', deal.stage) }}</em></td>
+                  <td>{{ deal.value | lmoney }}</td>
+                  <td>{{ deal.expectedCloseDate | ldate: 'short' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">{{ 'customer.nothing' | t }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @case ('loans') {
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'loans.reference' | t }}</th>
+                <th>{{ 'loans.product' | t }}</th>
+                <th>{{ 'loans.amount' | t }}</th>
+                <th>{{ 'loans.monthly' | t }}</th>
+                <th>{{ 'common.status' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (loan of data.loans; track loan.id) {
+                <tr>
+                  <td><b class="ltr">{{ loan.reference }}</b></td>
+                  <td>{{ label('product', loan.product) }}</td>
+                  <td>{{ loan.amount | lmoney }}</td>
+                  <td>{{ loan.monthlyPayment | lmoney }}</td>
+                  <td><em [class]="loan.status.toLowerCase()">{{ label('loanStatus', loan.status) }}</em></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="empty">{{ 'customer.nothing' | t }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @case ('tickets') {
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'tickets.reference' | t }}</th>
+                <th>{{ 'tickets.subject' | t }}</th>
+                <th>{{ 'tickets.priority' | t }}</th>
+                <th>{{ 'common.status' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ticket of data.tickets; track ticket.id) {
+                <tr [class.breached-row]="ticket.isBreached">
+                  <td><b class="ltr">{{ ticket.reference }}</b></td>
+                  <td>{{ ticket.subject }}</td>
+                  <td><em [class]="ticket.priority.toLowerCase()">{{ label('priority', ticket.priority) }}</em></td>
+                  <td><em [class]="ticket.status.toLowerCase()">{{ label('ticketStatus', ticket.status) }}</em></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">{{ 'customer.nothing' | t }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @case ('tasks') {
+        <div class="activity-list">
+          @for (activity of data.activities; track activity.id) {
+            <div class="activity-row" [class.done]="activity.isCompleted">
+              <i class="activity-icon">□</i>
+              <span class="activity-text">
+                <b>{{ activity.title }}</b>
+                <small>{{ label('type', activity.type) }}</small>
+              </span>
+              <span class="due">{{ activity.dueAt | ldate: 'dayTime' }}</span>
+            </div>
+          } @empty {
+            <p class="empty">{{ 'customer.nothing' | t }}</p>
+          }
+        </div>
+      }
+
+      @case ('emails') {
+        <div class="email-history">
+          @for (message of data.emails; track message.id) {
+            <div class="email-row">
+              <em [class]="message.status === 'Sent' ? 'converted' : 'lost'">
+                {{ label('email', 'status' + message.status) }}
+              </em>
+              <span>{{ message.subject }}</span>
+              <small>{{ message.createdAt | ldate: 'dayTime' }}</small>
+            </div>
+          } @empty {
+            <p class="empty">{{ 'customer.nothing' | t }}</p>
+          }
+        </div>
+      }
+
+      @case ('history') {
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'audit.time' | t }}</th>
+                <th>{{ 'audit.user' | t }}</th>
+                <th>{{ 'audit.action' | t }}</th>
+                <th>{{ 'audit.details' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of data.history; track entry.id) {
+                <tr>
+                  <td class="nowrap">{{ entry.occurredAt | ldate: 'dayTime' }}</td>
+                  <td><span class="ltr">{{ entry.userEmail }}</span></td>
+                  <td><em>{{ label('action', entry.action) }}</em></td>
+                  <td>{{ entry.summary }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">{{ 'customer.nothing' | t }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </section>
+
+  @if (showDocumentForm()) {
+    <div class="modal-backdrop" (click)="showDocumentForm.set(false)">
+      <form class="crm-form" (click)="$event.stopPropagation()" (ngSubmit)="saveDocument()">
+        <div>
+          <h2>{{ 'kyc.addDocument' | t }}</h2>
+          <button type="button" (click)="showDocumentForm.set(false)">×</button>
+        </div>
+
+        <label>
+          {{ 'kyc.documentType' | t }}
+          <select name="documentType" [ngModel]="documentForm().documentType" (ngModelChange)="updateDocument('documentType', $event)">
+            @for (type of documentTypes; track type) {
+              <option [value]="type">{{ label('docType', type) }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          {{ 'kyc.reference' | t }}
+          <input name="reference" class="ltr" [ngModel]="documentForm().reference" (ngModelChange)="updateDocument('reference', $event)" />
+        </label>
+
+        <div class="pair">
+          <label>
+            {{ 'kyc.issuedOn' | t }}
+            <input type="date" name="issuedOn" [ngModel]="documentForm().issuedOn" (ngModelChange)="updateDocument('issuedOn', $event)" />
+          </label>
+          <label>
+            {{ 'kyc.expiresOn' | t }}
+            <input type="date" name="expiresOn" [ngModel]="documentForm().expiresOn" (ngModelChange)="updateDocument('expiresOn', $event)" />
+          </label>
+        </div>
+
+        <label>
+          {{ 'kyc.notes' | t }}
+          <textarea rows="2" name="notes" [ngModel]="documentForm().notes" (ngModelChange)="updateDocument('notes', $event)"></textarea>
+        </label>
+
+        @if (error(); as message) {
+          <p class="form-error">{{ message }}</p>
+        }
+
+        <footer>
+          <button type="button" (click)="showDocumentForm.set(false)">{{ 'common.cancel' | t }}</button>
+          <button type="submit" [disabled]="loading()">{{ 'kyc.save' | t }}</button>
+        </footer>
+      </form>
+    </div>
+  }
+} @else if (!loading()) {
+  <section class="panel">
+    <p class="empty">{{ error() || ('customer.nothing' | t) }}</p>
+  </section>
+}

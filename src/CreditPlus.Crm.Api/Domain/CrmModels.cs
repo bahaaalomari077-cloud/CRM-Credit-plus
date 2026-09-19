@@ -51,11 +51,20 @@ public sealed record Lead(
     string Source,
     string Status,
     string Owner,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string KycStatus,
+    string RiskRating);
 
 public sealed record CreateLeadRequest(string FullName, string Company, string? Email, string? Phone, string? Source);
 
-public sealed record UpdateLeadRequest(string FullName, string Company, string? Email, string? Phone, string? Source, string? Status);
+public sealed record UpdateLeadRequest(
+    string FullName,
+    string Company,
+    string? Email,
+    string? Phone,
+    string? Source,
+    string? Status,
+    string? RiskRating);
 
 public sealed record Deal(
     Guid Id,

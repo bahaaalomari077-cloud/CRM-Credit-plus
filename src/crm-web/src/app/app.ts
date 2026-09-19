@@ -50,6 +50,8 @@ export class App {
     { key: 'nav.leads', icon: '◉', path: '/leads', badge: () => this.store.leads().length },
     { key: 'nav.deals', icon: '◇', path: '/deals', badge: () => this.store.deals().length },
     { key: 'nav.activities', icon: '✓', path: '/activities', badge: () => this.store.openActivities().length },
+    { key: 'nav.loans', icon: '⛁', path: '/loans' },
+    { key: 'nav.tickets', icon: '⛉', path: '/tickets' },
   ];
 
   private readonly allAdminNav: NavItem[] = [

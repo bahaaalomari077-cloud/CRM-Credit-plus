@@ -12,6 +12,9 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options) : DbCon
     public DbSet<UserEntity> Users => Set<UserEntity>();
     public DbSet<AuditEntryEntity> AuditEntries => Set<AuditEntryEntity>();
     public DbSet<EmailMessageEntity> EmailMessages => Set<EmailMessageEntity>();
+    public DbSet<KycDocumentEntity> KycDocuments => Set<KycDocumentEntity>();
+    public DbSet<LoanApplicationEntity> LoanApplications => Set<LoanApplicationEntity>();
+    public DbSet<TicketEntity> Tickets => Set<TicketEntity>();
 
     /// <summary>
     /// Npgsql only accepts UTC for 'timestamp with time zone', but callers may send any
@@ -37,8 +40,11 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options) : DbCon
             entity.Property(lead => lead.Source).HasMaxLength(60);
             entity.Property(lead => lead.Status).HasMaxLength(30).IsRequired();
             entity.Property(lead => lead.Owner).HasMaxLength(120);
+            entity.Property(lead => lead.KycStatus).HasMaxLength(20).IsRequired();
+            entity.Property(lead => lead.RiskRating).HasMaxLength(20).IsRequired();
             entity.Property(lead => lead.CreatedAt).HasConversion(UtcConverter);
             entity.HasIndex(lead => lead.Status);
+            entity.HasIndex(lead => lead.KycStatus);
             entity.HasIndex(lead => lead.CreatedAt);
         });
 
@@ -117,6 +123,70 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options) : DbCon
             entity.HasIndex(email => email.CreatedAt);
             entity.HasIndex(email => new { email.RelatedType, email.RelatedId });
         });
+
+        builder.Entity<KycDocumentEntity>(entity =>
+        {
+            entity.ToTable("kyc_documents");
+            entity.HasKey(document => document.Id);
+            entity.Property(document => document.DocumentType).HasMaxLength(40).IsRequired();
+            entity.Property(document => document.Reference).HasMaxLength(120);
+            entity.Property(document => document.Status).HasMaxLength(20).IsRequired();
+            entity.Property(document => document.Notes).HasMaxLength(600);
+            entity.Property(document => document.VerifiedBy).HasMaxLength(120);
+            entity.Property(document => document.CreatedAt).HasConversion(UtcConverter);
+            entity.Property(document => document.VerifiedAt).HasConversion(NullableUtcConverter);
+            // Deleting a customer takes their documents with them.
+            entity.HasOne<LeadEntity>().WithMany()
+                .HasForeignKey(document => document.LeadId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(document => document.LeadId);
+        });
+
+        builder.Entity<LoanApplicationEntity>(entity =>
+        {
+            entity.ToTable("loan_applications");
+            entity.HasKey(loan => loan.Id);
+            entity.Property(loan => loan.Reference).HasMaxLength(30).IsRequired();
+            entity.Property(loan => loan.Product).HasMaxLength(40).IsRequired();
+            entity.Property(loan => loan.Amount).HasColumnType("numeric(18,2)");
+            entity.Property(loan => loan.InterestRate).HasColumnType("numeric(6,3)");
+            entity.Property(loan => loan.Status).HasMaxLength(20).IsRequired();
+            entity.Property(loan => loan.Decision).HasMaxLength(40);
+            entity.Property(loan => loan.DecisionNotes).HasMaxLength(800);
+            entity.Property(loan => loan.Owner).HasMaxLength(120);
+            entity.Property(loan => loan.CreatedAt).HasConversion(UtcConverter);
+            entity.Property(loan => loan.DecidedAt).HasConversion(NullableUtcConverter);
+            entity.HasOne<LeadEntity>().WithMany()
+                .HasForeignKey(loan => loan.LeadId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(loan => loan.Reference).IsUnique();
+            entity.HasIndex(loan => loan.Status);
+            entity.HasIndex(loan => loan.LeadId);
+        });
+
+        builder.Entity<TicketEntity>(entity =>
+        {
+            entity.ToTable("tickets");
+            entity.HasKey(ticket => ticket.Id);
+            entity.Property(ticket => ticket.Reference).HasMaxLength(30).IsRequired();
+            entity.Property(ticket => ticket.CustomerName).HasMaxLength(200);
+            entity.Property(ticket => ticket.Subject).HasMaxLength(250).IsRequired();
+            entity.Property(ticket => ticket.Category).HasMaxLength(40).IsRequired();
+            entity.Property(ticket => ticket.Priority).HasMaxLength(20).IsRequired();
+            entity.Property(ticket => ticket.Status).HasMaxLength(20).IsRequired();
+            entity.Property(ticket => ticket.AssignedTo).HasMaxLength(120);
+            entity.Property(ticket => ticket.Resolution).HasMaxLength(1000);
+            entity.Property(ticket => ticket.CreatedAt).HasConversion(UtcConverter);
+            entity.Property(ticket => ticket.ResolvedAt).HasConversion(NullableUtcConverter);
+            entity.Property(ticket => ticket.DueAt).HasConversion(UtcConverter);
+            // A ticket may exist without a matching lead, so the link is optional.
+            entity.HasOne<LeadEntity>().WithMany()
+                .HasForeignKey(ticket => ticket.LeadId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(ticket => ticket.Reference).IsUnique();
+            entity.HasIndex(ticket => ticket.Status);
+            entity.HasIndex(ticket => ticket.LeadId);
+        });
     }
 }
 
@@ -135,8 +205,11 @@ public sealed class LeadEntity
     public string Status { get; set; } = LeadStatuses.New;
     public string Owner { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; }
+    public string KycStatus { get; set; } = KycStatuses.NotStarted;
+    public string RiskRating { get; set; } = RiskRatings.Medium;
 
-    public Lead ToRecord() => new(Id, FullName, Company, Email, Phone, Source, Status, Owner, CreatedAt);
+    public Lead ToRecord() =>
+        new(Id, FullName, Company, Email, Phone, Source, Status, Owner, CreatedAt, KycStatus, RiskRating);
 }
 
 public sealed class DealEntity
@@ -220,4 +293,97 @@ public sealed class EmailMessageEntity
     public EmailMessage ToRecord() =>
         new(Id, ToAddress, ToName, Subject, Body, Status, Error, RelatedType, RelatedId,
             SentByUserId, SentByName, CreatedAt, SentAt);
+}
+
+public sealed class KycDocumentEntity
+{
+    public Guid Id { get; set; }
+    public Guid LeadId { get; set; }
+    public string DocumentType { get; set; } = "";
+    public string Reference { get; set; } = "";
+    public string Status { get; set; } = KycStatuses.Pending;
+    public DateOnly? IssuedOn { get; set; }
+    public DateOnly? ExpiresOn { get; set; }
+    public string? Notes { get; set; }
+    public string VerifiedBy { get; set; } = "";
+    public DateTimeOffset? VerifiedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>A verified document past its expiry reports as expired, not verified.</summary>
+    public string EffectiveStatus =>
+        Status == KycStatuses.Verified && ExpiresOn is { } expiry && expiry < DateOnly.FromDateTime(DateTime.Today)
+            ? KycStatuses.Expired
+            : Status;
+
+    public KycDocument ToRecord() =>
+        new(Id, LeadId, DocumentType, Reference, EffectiveStatus, IssuedOn, ExpiresOn, Notes, VerifiedBy, VerifiedAt, CreatedAt);
+}
+
+public sealed class LoanApplicationEntity
+{
+    public Guid Id { get; set; }
+    public string Reference { get; set; } = "";
+    public Guid LeadId { get; set; }
+    public string Product { get; set; } = "";
+    public decimal Amount { get; set; }
+    public int TermMonths { get; set; }
+    public decimal InterestRate { get; set; }
+    public string Status { get; set; } = LoanStatuses.Draft;
+    public string? Decision { get; set; }
+    public string? DecisionNotes { get; set; }
+    public string Owner { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
+
+    /// <summary>Standard amortising payment; a zero rate falls back to simple division.</summary>
+    public decimal MonthlyPayment
+    {
+        get
+        {
+            if (TermMonths <= 0)
+            {
+                return 0m;
+            }
+
+            var monthlyRate = (double)InterestRate / 100 / 12;
+            if (monthlyRate <= 0)
+            {
+                return Math.Round(Amount / TermMonths, 2);
+            }
+
+            var factor = Math.Pow(1 + monthlyRate, TermMonths);
+            var payment = (double)Amount * monthlyRate * factor / (factor - 1);
+            return Math.Round((decimal)payment, 2);
+        }
+    }
+
+    public LoanApplication ToRecord(string customerName, string company) =>
+        new(Id, Reference, LeadId, customerName, company, Product, Amount, TermMonths, InterestRate,
+            Status, Decision, DecisionNotes, Owner, CreatedAt, DecidedAt, MonthlyPayment);
+}
+
+public sealed class TicketEntity
+{
+    public Guid Id { get; set; }
+    public string Reference { get; set; } = "";
+    public Guid? LeadId { get; set; }
+    public string CustomerName { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string Category { get; set; } = "Other";
+    public string Priority { get; set; } = TicketPriorities.Normal;
+    public string Status { get; set; } = TicketStatuses.Open;
+    public string AssignedTo { get; set; } = "";
+    public string? Resolution { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? ResolvedAt { get; set; }
+    public DateTimeOffset DueAt { get; set; }
+
+    /// <summary>An unresolved ticket past its response target has breached it.</summary>
+    public bool IsBreached =>
+        Status is not (TicketStatuses.Resolved or TicketStatuses.Closed) && DueAt < DateTimeOffset.UtcNow;
+
+    public Ticket ToRecord() =>
+        new(Id, Reference, LeadId, CustomerName, Subject, Description, Category, Priority, Status,
+            AssignedTo, Resolution, CreatedAt, ResolvedAt, DueAt, IsBreached);
 }

@@ -7,7 +7,7 @@ A small sales CRM: an ASP.NET Core 10 API backed by PostgreSQL, and an Angular 2
 | Path | What it is |
 | --- | --- |
 | `src/CreditPlus.Crm.Api` | REST API, EF Core + PostgreSQL, OpenAPI document |
-| `src/crm-web` | Angular client (dashboard, leads, deals, activities, reports, users, audit, settings) |
+| `src/crm-web` | Angular client (dashboard, customer files, leads, deals, loans, tickets, activities, reports, users, audit, settings) |
 
 ## Prerequisites
 
@@ -88,6 +88,58 @@ With `Email:Enabled` set to `false` (the default) messages are written as `.eml`
 Set the SMTP host, port, and credentials in `appsettings.json` and flip `Email:Enabled`
 to `true` to send for real.
 
+## Banking features
+
+### Customer file (360 view)
+
+`/customers/:id` gathers everything the CRM holds about one customer onto a single
+screen: their KYC documents, deals, loan applications, tickets, tasks, emails, and the
+audit history for that record, alongside a lead score.
+
+### Lead scoring
+
+The score is computed from stored facts, never guessed, and every point is returned with
+the reason for it so a salesperson can see why a lead ranks where it does:
+
+| Signal | Effect |
+| --- | --- |
+| Email on file | +10 |
+| Phone on file | +10 |
+| Source | +20 referral, +15 event, +10 campaign, +8 website, +5 other |
+| Status | +25 converted, +20 qualified, +10 contacted, +5 new |
+| KYC verified | +15 (rejected or expired: −10) |
+| Open deals | +8 each, capped at 16 |
+| Previously closed business | +10 |
+| Emails sent | +3 each, capped at 9 |
+| Open tickets | −5 each, capped at −15 |
+| High risk rating | −10 |
+
+The total is clamped to 0–100 and banded Hot (70+), Warm (40+), or Cold.
+
+### KYC
+
+Each customer holds a set of documents, each with a reference, issue and expiry dates,
+and a status. A national ID and a proof of address are required before a customer counts
+as verified. A verified document past its expiry date reports as expired rather than
+verified, and the customer's rolled-up status follows automatically.
+
+Verifying or rejecting a document is a compliance decision and requires a Manager.
+
+### Loan applications
+
+Applications move through Draft → Submitted → Under review → Approved → Disbursed, with
+rejection possible from any open state. The API refuses any move the workflow does not
+allow, and **approval is blocked unless the customer's KYC is verified**. Monthly payments
+are calculated with the standard amortisation formula. Approving or rejecting requires a
+Manager; an approved or disbursed application cannot be deleted.
+
+### Tickets
+
+Complaints and questions are logged with a category and priority, and each priority
+carries a response target: 4 hours for urgent, 8 for high, 24 for normal, 72 for low. A
+ticket past its target is flagged as breached until it is resolved, and resolving or
+closing one requires a resolution note.
+
 ## Data
 
 Data lives in PostgreSQL. On startup the API applies any pending EF Core migrations and seeds demo rows into empty tables, so a fresh `crm-db` is usable immediately.
@@ -138,6 +190,19 @@ Authentication and administration sit outside `/api/crm`:
 | GET · POST · PUT · DELETE | `/api/users` | Manage accounts (Admin) |
 | GET | `/api/audit?entityType=&entityId=&action=&limit=` | Read the audit trail (Manager, Admin) |
 | GET · POST | `/api/emails` | List and send messages |
+
+Banking endpoints sit under `/api/crm`:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/crm/customers/{id}` | The 360 view for one customer |
+| GET | `/crm/customers/{id}/score` | Lead score with its reasons |
+| GET | `/crm/kyc/{leadId}` | Rolled-up KYC position |
+| GET · POST · DELETE | `/crm/kyc/documents` | Manage KYC documents |
+| PATCH | `/crm/kyc/documents/{id}/verify` | Verify or reject a document (Manager) |
+| GET · POST · DELETE | `/crm/loans` | Manage loan applications |
+| PATCH | `/crm/loans/{id}/status` | Move an application (Manager) |
+| GET · POST · PUT · DELETE | `/crm/tickets` | Manage tickets |
 
 Deal stages are `Qualified`, `Proposal`, `Negotiation`, `Won`, `Lost`; lead statuses are `New`, `Contacted`, `Qualified`, `Converted`, `Lost`. The API stores these English values and the UI displays Arabic labels for them, mapped in `src/crm-web/src/app/core/crm.models.ts`.
 

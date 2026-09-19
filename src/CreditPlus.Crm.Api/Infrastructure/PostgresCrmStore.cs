@@ -49,6 +49,8 @@ public sealed class PostgresCrmStore(CrmDbContext db, ICurrentUser currentUser, 
             Phone = Text(request.Phone),
             Source = Text(request.Source, "Website"),
             Status = LeadStatuses.New,
+            KycStatus = KycStatuses.NotStarted,
+            RiskRating = RiskRatings.Medium,
             Owner = Owner,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -75,6 +77,7 @@ public sealed class PostgresCrmStore(CrmDbContext db, ICurrentUser currentUser, 
         entity.Phone = Text(request.Phone);
         entity.Source = Text(request.Source, entity.Source);
         entity.Status = LeadStatuses.Normalize(Text(request.Status, entity.Status));
+        entity.RiskRating = RiskRatings.Normalize(Text(request.RiskRating, entity.RiskRating));
 
         db.SaveChanges();
 

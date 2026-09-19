@@ -40,6 +40,24 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/activities-page').then((m) => m.ActivitiesPage),
   },
   {
+    path: 'loans',
+    title: title('nav.loans'),
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/loans-page').then((m) => m.LoansPage),
+  },
+  {
+    path: 'tickets',
+    title: title('nav.tickets'),
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/tickets-page').then((m) => m.TicketsPage),
+  },
+  {
+    path: 'customers/:id',
+    title: title('customer.title'),
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/customer-page').then((m) => m.CustomerPage),
+  },
+  {
     path: 'reports',
     title: title('nav.reports'),
     canActivate: [authGuard],

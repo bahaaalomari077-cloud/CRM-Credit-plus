@@ -35,6 +35,7 @@
           <th>{{ 'leads.phone' | t }}</th>
           <th>{{ 'leads.source' | t }}</th>
           <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'kyc.status' | t }}</th>
           <th>{{ 'leads.createdAt' | t }}</th>
           <th></th>
         </tr>
@@ -42,12 +43,15 @@
       <tbody>
         @for (lead of store.leads(); track lead.id) {
           <tr>
-            <td><b>{{ lead.fullName }}</b></td>
+            <td>
+              <a class="link" [routerLink]="['/customers', lead.id]"><b>{{ lead.fullName }}</b></a>
+            </td>
             <td>{{ lead.company }}</td>
             <td><span class="ltr">{{ lead.email || ('common.none' | t) }}</span></td>
             <td><span class="ltr">{{ lead.phone || ('common.none' | t) }}</span></td>
             <td>{{ sourceLabel(lead.source) }}</td>
             <td><em [class]="lead.status.toLowerCase()">{{ statusLabel(lead.status) }}</em></td>
+            <td><em [class]="lead.kycStatus.toLowerCase()">{{ kycLabel(lead.kycStatus) }}</em></td>
             <td>{{ lead.createdAt | ldate: 'short' }}</td>
             <td class="row-actions">
               @if (auth.canWrite()) {
@@ -62,7 +66,7 @@
             </td>
           </tr>
         } @empty {
-          <tr><td colspan="8" class="empty">{{ 'leads.empty' | t }}</td></tr>
+          <tr><td colspan="9" class="empty">{{ 'leads.empty' | t }}</td></tr>
         }
       </tbody>
     </table>

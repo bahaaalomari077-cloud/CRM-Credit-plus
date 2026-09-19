@@ -1,0 +1,206 @@
+<section class="heading">
+  <div>
+    <label>{{ 'tickets.eyebrow' | t }}</label>
+    <h1>{{ 'tickets.title' | t }}</h1>
+    <p>{{ 'tickets.subtitle' | t }}</p>
+  </div>
+  @if (auth.canWrite()) {
+    <button class="quick" (click)="openCreate()">{{ 'tickets.add' | t }}</button>
+  }
+</section>
+
+@if (error(); as message) {
+  <div class="banner error">⚠ {{ message }}<button (click)="error.set(null)">{{ 'app.close' | t }}</button></div>
+}
+
+<section class="stats">
+  <article>
+    <p>{{ 'tickets.openCount' | t }}</p>
+    <h2>{{ openCount() }}</h2>
+  </article>
+  <article>
+    <p>{{ 'tickets.breachedCount' | t }}</p>
+    <h2 [class.bad-text]="breachedCount() > 0">{{ breachedCount() }}</h2>
+  </article>
+  <article>
+    <p>{{ 'tickets.count' | t: { count: tickets().length } }}</p>
+    <h2>{{ tickets().length }}</h2>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-title">
+    <div>
+      <h2>{{ 'tickets.title' | t }}</h2>
+      <p>{{ 'tickets.count' | t: { count: tickets().length } }}</p>
+    </div>
+    <div class="toolbar">
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); reload()" name="statusFilter">
+        <option value="">{{ 'tickets.allStatuses' | t }}</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ statusLabel(status) }}</option>
+        }
+      </select>
+      <select [ngModel]="priorityFilter()" (ngModelChange)="priorityFilter.set($event); reload()" name="priorityFilter">
+        <option value="">{{ 'tickets.allPriorities' | t }}</option>
+        @for (priority of priorities; track priority) {
+          <option [value]="priority">{{ priorityLabel(priority) }}</option>
+        }
+      </select>
+      <a (click)="reload()">{{ 'common.refresh' | t }} ↻</a>
+    </div>
+  </div>
+
+  <div class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'tickets.reference' | t }}</th>
+          <th>{{ 'tickets.subject' | t }}</th>
+          <th>{{ 'loans.customer' | t }}</th>
+          <th>{{ 'tickets.category' | t }}</th>
+          <th>{{ 'tickets.priority' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'tickets.dueAt' | t }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ticket of tickets(); track ticket.id) {
+          <tr [class.breached-row]="ticket.isBreached">
+            <td><b class="ltr">{{ ticket.reference }}</b></td>
+            <td>{{ ticket.subject }}</td>
+            <td>{{ ticket.customerName }}</td>
+            <td>{{ categoryLabel(ticket.category) }}</td>
+            <td><em [class]="ticket.priority.toLowerCase()">{{ priorityLabel(ticket.priority) }}</em></td>
+            <td><em [class]="ticket.status.toLowerCase()">{{ statusLabel(ticket.status) }}</em></td>
+            <td class="nowrap">
+              {{ ticket.dueAt | ldate: 'dayTime' }}
+              @if (ticket.isBreached) { <em class="lost">{{ 'tickets.breached' | t }}</em> }
+            </td>
+            <td class="row-actions">
+              @if (auth.canWrite()) {
+                <button (click)="openEdit(ticket)" [title]="'common.edit' | t">✎</button>
+                <button class="danger" (click)="remove(ticket)" [title]="'common.delete' | t">🗑</button>
+              } @else {
+                <span class="muted-dash">—</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="empty">{{ 'tickets.empty' | t }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="showForm.set(false)">
+    <form class="crm-form wide" (click)="$event.stopPropagation()" (ngSubmit)="save()">
+      <div>
+        <h2>{{ (editingId() ? 'tickets.formEdit' : 'tickets.formAdd') | t }}</h2>
+        <button type="button" (click)="showForm.set(false)">×</button>
+      </div>
+
+      @if (!editingId()) {
+        <label>
+          {{ 'tickets.linkCustomer' | t }}
+          <select name="leadId" [ngModel]="form().leadId" (ngModelChange)="update('leadId', $event)">
+            <option value="">{{ 'tickets.noCustomer' | t }}</option>
+            @for (lead of store.leads(); track lead.id) {
+              <option [value]="lead.id">{{ lead.fullName }} — {{ lead.company }}</option>
+            }
+          </select>
+        </label>
+
+        @if (!form().leadId) {
+          <label>
+            {{ 'loans.customer' | t }}
+            <input
+              required
+              name="customerName"
+              [ngModel]="form().customerName"
+              (ngModelChange)="update('customerName', $event)"
+            />
+          </label>
+        }
+      }
+
+      <label>
+        {{ 'tickets.subject' | t }}
+        <input required name="subject" [ngModel]="form().subject" (ngModelChange)="update('subject', $event)" />
+      </label>
+
+      <label>
+        {{ 'tickets.description' | t }}
+        <textarea
+          required
+          rows="4"
+          name="description"
+          [ngModel]="form().description"
+          (ngModelChange)="update('description', $event)"
+        ></textarea>
+      </label>
+
+      <div class="pair">
+        <label>
+          {{ 'tickets.category' | t }}
+          <select name="category" [ngModel]="form().category" (ngModelChange)="update('category', $event)">
+            @for (category of categories; track category) {
+              <option [value]="category">{{ categoryLabel(category) }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          {{ 'tickets.priority' | t }}
+          <select name="priority" [ngModel]="form().priority" (ngModelChange)="update('priority', $event)">
+            @for (priority of priorities; track priority) {
+              <option [value]="priority">{{ priorityLabel(priority) }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      @if (editingId()) {
+        <div class="pair">
+          <label>
+            {{ 'common.status' | t }}
+            <select name="status" [ngModel]="form().status" (ngModelChange)="update('status', $event)">
+              @for (status of statuses; track status) {
+                <option [value]="status">{{ statusLabel(status) }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            {{ 'tickets.assignedTo' | t }}
+            <input name="assignedTo" [ngModel]="form().assignedTo" (ngModelChange)="update('assignedTo', $event)" />
+          </label>
+        </div>
+
+        <label>
+          {{ 'tickets.resolution' | t }}
+          <textarea
+            rows="3"
+            name="resolution"
+            [ngModel]="form().resolution"
+            (ngModelChange)="update('resolution', $event)"
+          ></textarea>
+        </label>
+
+        @if (needsResolution()) {
+          <p class="form-note">{{ 'tickets.resolutionRequired' | t }}</p>
+        }
+      }
+
+      @if (error(); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+
+      <footer>
+        <button type="button" (click)="showForm.set(false)">{{ 'common.cancel' | t }}</button>
+        <button type="submit" [disabled]="loading() || needsResolution()">{{ 'tickets.save' | t }}</button>
+      </footer>
+    </form>
+  </div>
+}

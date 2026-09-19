@@ -75,6 +75,10 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICrmStore, PostgresCrmStore>();
 builder.Services.AddScoped<ICrmDashboardService, CrmDashboardService>();
+builder.Services.AddScoped<IKycService, KycService>();
+builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 var app = builder.Build();
 
