@@ -121,7 +121,13 @@ public sealed record DashboardSummary(
     int OpenActivities,
     IReadOnlyList<PipelineStage> Pipeline,
     IReadOnlyList<Deal> Deals,
-    IReadOnlyList<Activity> Activities);
+    IReadOnlyList<Activity> Activities,
+    int PendingKyc,
+    int LoansAwaitingDecision,
+    decimal LoansAwaitingValue,
+    int OpenTickets,
+    int BreachedTickets,
+    int CriticalAlerts);
 
 /// <summary>The whole CRM database as persisted to a single JSON document.</summary>
 public sealed class CrmData

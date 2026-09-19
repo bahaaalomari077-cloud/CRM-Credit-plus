@@ -37,3 +37,17 @@ public interface ICustomerService
     /// <summary>Scores a lead from stored signals; returns the score and why.</summary>
     (int Score, string Band, IReadOnlyList<string> Reasons) Score(Guid leadId);
 }
+
+public interface IInsightService
+{
+    /// <summary>Conditions needing attention, derived fresh from stored data.</summary>
+    IReadOnlyList<Alert> GetAlerts(int limit = 50);
+
+    OperationsReport GetOperationsReport();
+}
+
+public interface IExportService
+{
+    /// <summary>Renders a dataset as CSV. Throws CrmValidationException for an unknown name.</summary>
+    (string FileName, string Content) Export(string dataset);
+}

@@ -3,6 +3,8 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { Role } from './core/auth.models';
+import { Alert } from './core/banking.models';
+import { BankingService } from './core/banking.service';
 import { AuthService } from './core/auth.service';
 import { CrmStore } from './core/crm-store.service';
 import { I18nService, Language, TranslationKey } from './core/i18n/i18n.service';
@@ -29,10 +31,17 @@ export class App {
   protected readonly i18n = inject(I18nService);
   protected readonly themes = inject(ThemeService);
   private readonly router = inject(Router);
+  private readonly banking = inject(BankingService);
 
   protected readonly showQuickAdd = signal(false);
   protected readonly showUserMenu = signal(false);
   protected readonly searchOpen = signal(false);
+  protected readonly showAlerts = signal(false);
+  protected readonly alerts = signal<Alert[]>([]);
+
+  protected readonly criticalCount = computed(
+    () => this.alerts().filter((alert) => alert.severity === 'Critical').length,
+  );
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -129,10 +138,36 @@ export class App {
     this.auth.logout();
   }
 
+  protected async loadAlerts(): Promise<void> {
+    try {
+      this.alerts.set(await this.banking.getAlerts(50));
+    } catch {
+      // Alerts are supplementary; a failure must not break the shell.
+    }
+  }
+
+  protected async toggleAlerts(): Promise<void> {
+    const opening = !this.showAlerts();
+    this.showQuickAdd.set(false);
+    this.searchOpen.set(false);
+    this.showAlerts.set(opening);
+    if (opening) {
+      await this.loadAlerts();
+    }
+  }
+
+  protected openAlert(alert: Alert): void {
+    this.closeMenus();
+    if (alert.link) {
+      void this.router.navigateByUrl(alert.link);
+    }
+  }
+
   protected closeMenus(): void {
     this.showQuickAdd.set(false);
     this.showUserMenu.set(false);
     this.searchOpen.set(false);
+    this.showAlerts.set(false);
   }
 
   private permitted(item: NavItem): boolean {
@@ -149,6 +184,7 @@ export class App {
     }
     if (this.auth.isAuthenticated()) {
       await this.store.refreshAll();
+      await this.loadAlerts();
     }
   }
 }

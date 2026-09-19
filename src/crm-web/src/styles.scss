@@ -272,3 +272,35 @@ td>em.high{background:var(--warn-bg);color:var(--warn-ink)}
 tbody tr.breached-row:hover{background:var(--bad-bg)}
 
 @media(max-width:1050px){.customer-top{grid-template-columns:1fr}}
+
+/* --- alerts bell and dropdown --- */
+.icon-btn.bell{position:relative}
+.bell-dot{position:absolute;top:-5px;inset-inline-end:-5px;background:var(--bad-ink);color:#fff;font-style:normal;font-size:8px;font-weight:800;min-width:15px;height:15px;border-radius:20px;display:grid;place-items:center;padding:0 3px}
+.alert-menu{position:absolute;z-index:7;top:44px;inset-inline-end:0;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-lg);border-radius:11px;padding:6px;width:325px;max-height:380px;overflow:auto}
+.alert-head{font-size:11px;font-weight:800;color:var(--ink);padding:8px 9px 10px;border-bottom:1px solid var(--line-soft);margin-bottom:4px}
+.alert-row{display:flex;align-items:flex-start;gap:9px;width:100%;text-align:start;padding:9px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--ink)}
+.alert-row:hover{background:var(--accent-soft)}
+.alert-row .dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:0 0 7px}
+.dot.critical{background:var(--bad-ink)}
+.dot.warning{background:var(--warn-ink)}
+.dot.info{background:var(--info-ink)}
+.alert-row span{display:grid;gap:2px;min-width:0}
+.alert-row b{font-size:11px}
+.alert-row small{font-size:9px;color:var(--muted)}
+.alert-empty{margin:0;padding:18px 9px;text-align:center;font-size:11px;color:var(--muted)}
+
+/* --- dashboard banking row --- */
+.banking-row{margin-top:18px}
+.mini-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-top:16px}
+.mini{border:1px solid var(--line);border-radius:10px;padding:13px;display:grid;gap:5px;text-decoration:none;color:var(--ink);background:var(--surface-2)}
+a.mini:hover{border-color:var(--accent);background:var(--accent-soft)}
+.mini b{font-size:19px}
+.mini small{font-size:9px;color:var(--muted);line-height:1.35}
+.mini.alarm b{color:var(--bad-ink)}
+.mini.alarm{border-color:var(--bad-line);background:var(--bad-bg)}
+
+.heading.sub{padding-top:26px;padding-bottom:12px}
+.heading h1.small{font-size:18px}
+
+@media(max-width:1050px){.mini-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:720px){.mini-stats{grid-template-columns:repeat(2,1fr)}.alert-menu{width:min(325px,88vw)}}

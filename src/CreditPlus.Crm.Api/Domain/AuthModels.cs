@@ -66,4 +66,5 @@ public static class AuditActions
     public const string LoginFailed = "LoginFailed";
     public const string EmailSent = "EmailSent";
     public const string PasswordChanged = "PasswordChanged";
+    public const string Exported = "Exported";
 }

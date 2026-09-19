@@ -23,6 +23,12 @@ const emptyDashboard: DashboardSummary = {
   pipeline: [],
   deals: [],
   activities: [],
+  pendingKyc: 0,
+  loansAwaitingDecision: 0,
+  loansAwaitingValue: 0,
+  openTickets: 0,
+  breachedTickets: 0,
+  criticalAlerts: 0,
 };
 
 /** Single source of truth for the shell and every page; wraps the API in signals. */

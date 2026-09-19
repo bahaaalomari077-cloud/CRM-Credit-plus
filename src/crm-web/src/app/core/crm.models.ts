@@ -57,6 +57,12 @@ export interface DashboardSummary {
   pipeline: PipelineStage[];
   deals: Deal[];
   activities: Activity[];
+  pendingKyc: number;
+  loansAwaitingDecision: number;
+  loansAwaitingValue: number;
+  openTickets: number;
+  breachedTickets: number;
+  criticalAlerts: number;
 }
 
 export interface CreateLeadRequest {

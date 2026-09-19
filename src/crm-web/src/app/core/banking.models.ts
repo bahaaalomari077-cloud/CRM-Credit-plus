@@ -168,3 +168,44 @@ export const TICKET_CATEGORIES = [
   'DocumentRequest',
   'Other',
 ];
+
+export type AlertSeverity = 'Critical' | 'Warning' | 'Info';
+
+export interface Alert {
+  kind: string;
+  severity: AlertSeverity;
+  title: string;
+  detail: string;
+  entityType: string;
+  entityId: string;
+  link: string | null;
+  dueAt: string | null;
+}
+
+export interface CountAndValue {
+  label: string;
+  count: number;
+  value: number;
+}
+
+export interface OperationsReport {
+  totalLoans: number;
+  totalRequested: number;
+  totalApproved: number;
+  totalDisbursed: number;
+  approvalRate: number;
+  averageLoanSize: number;
+  loansByStatus: CountAndValue[];
+  loansByProduct: CountAndValue[];
+  totalTickets: number;
+  openTickets: number;
+  breachedTickets: number;
+  slaComplianceRate: number;
+  averageResolutionHours: number;
+  ticketsByCategory: CountAndValue[];
+  ticketsByPriority: CountAndValue[];
+  kycByStatus: CountAndValue[];
+  customersFullyVerified: number;
+}
+
+export const EXPORT_DATASETS = ['leads', 'deals', 'loans', 'tickets', 'kyc', 'audit'];

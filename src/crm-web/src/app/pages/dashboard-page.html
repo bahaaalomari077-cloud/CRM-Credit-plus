@@ -24,6 +24,41 @@
   }
 </section>
 
+<section class="panel banking-row">
+  <div class="panel-title">
+    <div>
+      <h2>{{ 'dashboard.banking' | t }}</h2>
+      <p>{{ 'dashboard.bankingSub' | t }}</p>
+    </div>
+  </div>
+  <div class="mini-stats">
+    <a routerLink="/leads" class="mini">
+      <b>{{ store.dashboard().pendingKyc }}</b>
+      <small>{{ 'dashboard.pendingKyc' | t }}</small>
+    </a>
+    <a routerLink="/loans" class="mini">
+      <b>{{ store.dashboard().loansAwaitingDecision }}</b>
+      <small>{{ 'dashboard.loansAwaiting' | t }}</small>
+    </a>
+    <a routerLink="/loans" class="mini">
+      <b>{{ store.dashboard().loansAwaitingValue | lmoney }}</b>
+      <small>{{ 'loans.totalRequested' | t }}</small>
+    </a>
+    <a routerLink="/tickets" class="mini">
+      <b>{{ store.dashboard().openTickets }}</b>
+      <small>{{ 'dashboard.openTickets' | t }}</small>
+    </a>
+    <a routerLink="/tickets" class="mini" [class.alarm]="store.dashboard().breachedTickets > 0">
+      <b>{{ store.dashboard().breachedTickets }}</b>
+      <small>{{ 'dashboard.breachedTickets' | t }}</small>
+    </a>
+    <div class="mini" [class.alarm]="store.dashboard().criticalAlerts > 0">
+      <b>{{ store.dashboard().criticalAlerts }}</b>
+      <small>{{ 'dashboard.criticalAlerts' | t }}</small>
+    </div>
+  </div>
+</section>
+
 <section class="grid">
   <article class="panel">
     <div class="panel-title">

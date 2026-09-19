@@ -1,10 +1,12 @@
 using CreditPlus.Crm.Api.Application;
 using CreditPlus.Crm.Api.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace CreditPlus.Crm.Api.Infrastructure;
 
 /// <summary>Derives every dashboard number from the stored deals, leads, and activities.</summary>
-public sealed class CrmDashboardService(ICrmStore store) : ICrmDashboardService
+public sealed class CrmDashboardService(ICrmStore store, CrmDbContext db, IInsightService insights)
+    : ICrmDashboardService
 {
     public DashboardSummary GetDashboard()
     {
@@ -14,6 +16,15 @@ public sealed class CrmDashboardService(ICrmStore store) : ICrmDashboardService
 
         var openDeals = deals.Where(deal => DealStages.Open.Contains(deal.Stage)).ToList();
         var wonDeals = deals.Where(deal => deal.Stage == DealStages.Won).ToList();
+
+        // Banking figures for the header tiles.
+        var awaiting = db.LoanApplications.AsNoTracking()
+            .Where(loan => loan.Status == LoanStatuses.Submitted || loan.Status == LoanStatuses.UnderReview)
+            .ToList();
+
+        var openTickets = db.Tickets.AsNoTracking()
+            .Where(ticket => ticket.Status != TicketStatuses.Resolved && ticket.Status != TicketStatuses.Closed)
+            .ToList();
 
         var monthStart = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
         var wonThisMonth = wonDeals
@@ -48,6 +59,13 @@ public sealed class CrmDashboardService(ICrmStore store) : ICrmDashboardService
             activities.Count(activity => !activity.IsCompleted),
             pipeline,
             openDeals,
-            activities.Where(activity => !activity.IsCompleted).Take(6).ToList());
+            activities.Where(activity => !activity.IsCompleted).Take(6).ToList(),
+            db.Leads.AsNoTracking().Count(lead =>
+                lead.KycStatus == KycStatuses.Pending || lead.KycStatus == KycStatuses.Expired),
+            awaiting.Count,
+            awaiting.Sum(loan => loan.Amount),
+            openTickets.Count,
+            openTickets.Count(ticket => ticket.DueAt < DateTimeOffset.UtcNow),
+            insights.GetAlerts(200).Count(alert => alert.Severity == AlertSeverities.Critical));
     }
 }

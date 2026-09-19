@@ -140,6 +140,25 @@ carries a response target: 4 hours for urgent, 8 for high, 24 for normal, 72 for
 ticket past its target is flagged as breached until it is resolved, and resolving or
 closing one requires a resolution note.
 
+### Alerts
+
+The bell in the header lists what needs attention, derived fresh from the data rather
+than stored: KYC documents expired or expiring within 30 days, customers with an open
+application but incomplete KYC, tickets past or close to their response target, loan
+applications waiting on a decision, deals closing within the week, and overdue tasks.
+Because nothing is persisted, resolving the underlying record clears the alert.
+
+### Reports and export
+
+Reports cover sales, lending (approval rate, average size, breakdown by status and
+product) and service (open tickets, target compliance, average resolution time), plus a
+KYC compliance breakdown.
+
+Managers can export leads, deals, loans, tickets, KYC documents, or the audit trail as
+CSV. Every export is written to the audit trail with the row count, since who took a copy
+of customer data is itself a compliance question. Values beginning with `=`, `+`, `-` or
+`@` are quoted so a spreadsheet treats them as text rather than formulas.
+
 ## Data
 
 Data lives in PostgreSQL. On startup the API applies any pending EF Core migrations and seeds demo rows into empty tables, so a fresh `crm-db` is usable immediately.
@@ -203,6 +222,9 @@ Banking endpoints sit under `/api/crm`:
 | GET · POST · DELETE | `/crm/loans` | Manage loan applications |
 | PATCH | `/crm/loans/{id}/status` | Move an application (Manager) |
 | GET · POST · PUT · DELETE | `/crm/tickets` | Manage tickets |
+| GET | `/crm/alerts` | Conditions needing attention |
+| GET | `/crm/reports/operations` | Lending and service analytics |
+| GET | `/crm/export/{dataset}` | CSV export (Manager) |
 
 Deal stages are `Qualified`, `Proposal`, `Negotiation`, `Won`, `Lost`; lead statuses are `New`, `Contacted`, `Qualified`, `Converted`, `Lost`. The API stores these English values and the UI displays Arabic labels for them, mapped in `src/crm-web/src/app/core/crm.models.ts`.
 

@@ -88,6 +88,30 @@
             <button [class.on]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
           </div>
 
+          <button class="icon-btn bell" (click)="toggleAlerts()" [title]="'alerts.title' | t">
+            ⚑
+            @if (criticalCount()) {
+              <i class="bell-dot">{{ criticalCount() }}</i>
+            }
+          </button>
+
+          @if (showAlerts()) {
+            <div class="alert-menu">
+              <div class="alert-head">{{ 'alerts.title' | t }}</div>
+              @for (alert of alerts(); track alert.kind + alert.entityId) {
+                <button class="alert-row" (click)="openAlert(alert)">
+                  <i [class]="'dot ' + alert.severity.toLowerCase()"></i>
+                  <span>
+                    <b>{{ alert.title }}</b>
+                    <small>{{ alert.detail }}</small>
+                  </span>
+                </button>
+              } @empty {
+                <p class="alert-empty">{{ 'alerts.empty' | t }}</p>
+              }
+            </div>
+          }
+
           <button
             class="icon-btn"
             (click)="themes.toggle()"

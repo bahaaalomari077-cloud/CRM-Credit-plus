@@ -95,3 +95,134 @@
     </div>
   </article>
 </section>
+
+@if (operations(); as ops) {
+  <section class="heading sub">
+    <div>
+      <label>{{ 'reports.operations' | t }}</label>
+      <h1 class="small">{{ 'reports.lending' | t }}</h1>
+    </div>
+  </section>
+
+  <section class="stats">
+    <article>
+      <p>{{ 'reports.totalRequested' | t }}</p>
+      <h2>{{ ops.totalRequested | lmoney }}</h2>
+    </article>
+    <article>
+      <p>{{ 'reports.totalApproved' | t }}</p>
+      <h2>{{ ops.totalApproved | lmoney }}</h2>
+    </article>
+    <article>
+      <p>{{ 'reports.approvalRate' | t }}</p>
+      <h2>{{ ops.approvalRate }}%</h2>
+    </article>
+    <article>
+      <p>{{ 'reports.avgLoan' | t }}</p>
+      <h2>{{ ops.averageLoanSize | lmoney }}</h2>
+    </article>
+  </section>
+
+  <section class="grid">
+    <article class="panel">
+      <div class="panel-title"><div><h2>{{ 'reports.loansByStatus' | t }}</h2></div></div>
+      <div class="kv">
+        @for (row of ops.loansByStatus; track row.label) {
+          <div>
+            <span>{{ label('loanStatus', row.label) }}</span>
+            <b>{{ row.count }} · {{ row.value | lmoney }}</b>
+          </div>
+        } @empty {
+          <p class="empty">{{ 'reports.noData' | t }}</p>
+        }
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title"><div><h2>{{ 'reports.loansByProduct' | t }}</h2></div></div>
+      <div class="kv">
+        @for (row of ops.loansByProduct; track row.label) {
+          <div>
+            <span>{{ label('product', row.label) }}</span>
+            <b>{{ row.count }} · {{ row.value | lmoney }}</b>
+          </div>
+        } @empty {
+          <p class="empty">{{ 'reports.noData' | t }}</p>
+        }
+      </div>
+    </article>
+  </section>
+
+  <section class="heading sub">
+    <div><h1 class="small">{{ 'reports.service' | t }}</h1></div>
+  </section>
+
+  <section class="stats">
+    <article>
+      <p>{{ 'reports.openTickets' | t }}</p>
+      <h2>{{ ops.openTickets }}</h2>
+    </article>
+    <article>
+      <p>{{ 'reports.breached' | t }}</p>
+      <h2 [class.bad-text]="ops.breachedTickets > 0">{{ ops.breachedTickets }}</h2>
+    </article>
+    <article>
+      <p>{{ 'reports.slaRate' | t }}</p>
+      <h2>{{ ops.slaComplianceRate }}%</h2>
+    </article>
+    <article>
+      <p>{{ 'reports.avgResolution' | t }}</p>
+      <h2>{{ ops.averageResolutionHours }}</h2>
+    </article>
+  </section>
+
+  <section class="grid">
+    <article class="panel">
+      <div class="panel-title"><div><h2>{{ 'reports.ticketsByCategory' | t }}</h2></div></div>
+      <div class="kv">
+        @for (row of ops.ticketsByCategory; track row.label) {
+          <div><span>{{ label('category', row.label) }}</span><b>{{ row.count }}</b></div>
+        } @empty {
+          <p class="empty">{{ 'reports.noData' | t }}</p>
+        }
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title"><div><h2>{{ 'reports.kycByStatus' | t }}</h2></div></div>
+      <div class="kv">
+        @for (row of ops.kycByStatus; track row.label) {
+          <div><span>{{ label('kycStatus', row.label) }}</span><b>{{ row.count }}</b></div>
+        } @empty {
+          <p class="empty">{{ 'reports.noData' | t }}</p>
+        }
+        <div>
+          <span>{{ 'reports.verifiedCustomers' | t }}</span>
+          <b class="ok-text">{{ ops.customersFullyVerified }}</b>
+        </div>
+      </div>
+    </article>
+  </section>
+}
+
+@if (auth.canReadAudit()) {
+  <section class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>{{ 'export.title' | t }}</h2>
+        <p>{{ 'export.subtitle' | t }}</p>
+      </div>
+    </div>
+    <div class="choice-row">
+      @for (dataset of datasets; track dataset) {
+        <button (click)="download(dataset)" [disabled]="exporting() !== null">
+          &#x2B73; {{ ('export.' + dataset) | t }}
+        </button>
+      }
+    </div>
+    @if (exportError(); as message) {
+      <p class="form-error">{{ message }}</p>
+    }
+    <p class="form-note">{{ 'export.managerOnly' | t }}</p>
+  </section>
+}

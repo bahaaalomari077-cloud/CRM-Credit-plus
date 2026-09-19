@@ -21,7 +21,9 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 builder.Services.AddCors(options => options.AddPolicy("crm-web", policy => policy
     .WithOrigins(allowedOrigins)
     .AllowAnyHeader()
-    .AllowAnyMethod()));
+    .AllowAnyMethod()
+    // Without this the browser hides the header and CSV downloads lose their filename.
+    .WithExposedHeaders("Content-Disposition")));
 
 var connectionString = builder.Configuration.GetConnectionString("CrmDatabase");
 // The factory supplies short-lived contexts for the audit log, so its rows survive a
@@ -79,6 +81,8 @@ builder.Services.AddScoped<IKycService, KycService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IInsightService, InsightService>();
+builder.Services.AddScoped<IExportService, ExportService>();
 
 var app = builder.Build();
 

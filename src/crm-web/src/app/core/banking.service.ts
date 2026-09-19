@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  Alert,
+  OperationsReport,
   CreateKycDocumentRequest,
   CreateLoanRequest,
   CreateTicketRequest,
@@ -19,6 +21,42 @@ import {
 export class BankingService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBaseUrl;
+
+  getAlerts(limit = 50): Promise<Alert[]> {
+    return firstValueFrom(
+      this.http.get<Alert[]>(`${this.base}/alerts`, { params: new HttpParams().set('limit', limit) }),
+    );
+  }
+
+  getOperationsReport(): Promise<OperationsReport> {
+    return firstValueFrom(this.http.get<OperationsReport>(`${this.base}/reports/operations`));
+  }
+
+  /**
+   * Downloads a CSV. The browser cannot set an Authorization header on a plain
+   * link, so the file is fetched as a blob and saved from memory.
+   */
+  async exportCsv(dataset: string): Promise<void> {
+    const response = await firstValueFrom(
+      this.http.get(`${this.base}/export/${dataset}`, { responseType: 'blob', observe: 'response' }),
+    );
+
+    const blob = response.body;
+    if (!blob) {
+      return;
+    }
+
+    const disposition = response.headers.get('content-disposition') ?? '';
+    const match = /filename=([^;]+)/i.exec(disposition);
+    const name = match ? match[1].trim().replace(/^"|"$/g, '') : `${dataset}.csv`;
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   getCustomer(leadId: string): Promise<CustomerOverview> {
     return firstValueFrom(this.http.get<CustomerOverview>(`${this.base}/customers/${leadId}`));

@@ -1,4 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../core/auth.service';
+import { EXPORT_DATASETS, OperationsReport } from '../core/banking.models';
+import { BankingService } from '../core/banking.service';
 import { CrmStore } from '../core/crm-store.service';
 import { I18nService, TranslationKey } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
@@ -20,9 +23,44 @@ interface Slice {
 })
 export class ReportsPage {
   protected readonly store = inject(CrmStore);
+  protected readonly auth = inject(AuthService);
+  private readonly banking = inject(BankingService);
   private readonly i18n = inject(I18nService);
 
+  protected readonly datasets = EXPORT_DATASETS;
+  protected readonly operations = signal<OperationsReport | null>(null);
+  protected readonly exporting = signal<string | null>(null);
+  protected readonly exportError = signal<string | null>(null);
+
   private readonly accents = ['blue', 'violet', 'amber', 'emerald', 'slate'];
+
+  constructor() {
+    void this.loadOperations();
+  }
+
+  protected async loadOperations(): Promise<void> {
+    try {
+      this.operations.set(await this.banking.getOperationsReport());
+    } catch {
+      // The sales figures above still render without the operations block.
+    }
+  }
+
+  protected label(prefix: string, value: string): string {
+    return this.i18n.translate(`${prefix}.${value}` as TranslationKey);
+  }
+
+  protected async download(dataset: string): Promise<void> {
+    this.exporting.set(dataset);
+    this.exportError.set(null);
+    try {
+      await this.banking.exportCsv(dataset);
+    } catch {
+      this.exportError.set(this.i18n.translate('export.managerOnly'));
+    } finally {
+      this.exporting.set(null);
+    }
+  }
 
   protected readonly byStage = computed<Slice[]>(() => {
     const deals = this.store.deals();
