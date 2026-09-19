@@ -38,6 +38,8 @@ export class App {
   protected readonly searchOpen = signal(false);
   protected readonly showAlerts = signal(false);
   protected readonly alerts = signal<Alert[]>([]);
+  private readonly loans = signal<{ id: string; reference: string; customerName: string }[]>([]);
+  private readonly tickets = signal<{ id: string; reference: string; subject: string }[]>([]);
 
   protected readonly criticalCount = computed(
     () => this.alerts().filter((alert) => alert.severity === 'Critical').length,
@@ -97,7 +99,17 @@ export class App {
       .slice(0, 4)
       .map((activity) => ({ icon: '✓', label: activity.title, sub: activity.relatedTo, path: '/activities' }));
 
-    return [...leads, ...deals, ...activities];
+    const loans = this.loans()
+      .filter((loan) => `${loan.reference} ${loan.customerName}`.toLowerCase().includes(term))
+      .slice(0, 4)
+      .map((loan) => ({ icon: '⛁', label: loan.reference, sub: loan.customerName, path: '/loans' }));
+
+    const tickets = this.tickets()
+      .filter((ticket) => `${ticket.reference} ${ticket.subject}`.toLowerCase().includes(term))
+      .slice(0, 4)
+      .map((ticket) => ({ icon: '⛉', label: ticket.reference, sub: ticket.subject, path: '/tickets' }));
+
+    return [...leads, ...deals, ...activities, ...loans, ...tickets];
   });
 
   constructor() {
@@ -146,6 +158,20 @@ export class App {
     }
   }
 
+  /** Loans and tickets are not in the shared store, so search loads them here. */
+  private async loadSearchable(): Promise<void> {
+    try {
+      const [loans, tickets] = await Promise.all([
+        this.banking.getLoans(),
+        this.banking.getTickets(),
+      ]);
+      this.loans.set(loans);
+      this.tickets.set(tickets);
+    } catch {
+      // Search still works across the other collections.
+    }
+  }
+
   protected async toggleAlerts(): Promise<void> {
     const opening = !this.showAlerts();
     this.showQuickAdd.set(false);
@@ -185,6 +211,7 @@ export class App {
     if (this.auth.isAuthenticated()) {
       await this.store.refreshAll();
       await this.loadAlerts();
+      await this.loadSearchable();
     }
   }
 }

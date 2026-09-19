@@ -7,6 +7,7 @@ A small sales CRM: an ASP.NET Core 10 API backed by PostgreSQL, and an Angular 2
 | Path | What it is |
 | --- | --- |
 | `src/CreditPlus.Crm.Api` | REST API, EF Core + PostgreSQL, OpenAPI document |
+| `src/CreditPlus.Crm.Tests` | xUnit tests for the business rules |
 | `src/crm-web` | Angular client (dashboard, customer files, leads, deals, loans, tickets, activities, reports, users, audit, settings) |
 
 ## Prerequisites
@@ -235,6 +236,24 @@ Validation failures return 400 with a ProblemDetails body whose `detail` the UI 
 ## Configuration
 
 The API reads allowed CORS origins from `Cors:AllowedOrigins` in `appsettings.json` (default `http://localhost:4200`). The client reads its API base URL from `src/crm-web/src/environments/environment.ts`; change both together if you move a port.
+
+## Tests
+
+```bash
+dotnet test
+```
+
+The suite covers the rules that would be costly to break silently: the KYC gate on
+loan approval, the loan status workflow, amortisation arithmetic, KYC expiry and
+roll-up, ticket response targets, password hashing, the last-administrator guard,
+CSV formula-injection escaping, lead scoring, and alert derivation.
+
+Tests run against a real PostgreSQL database rather than an in-memory substitute —
+each class (or each test, where a rule depends on the whole table) creates a
+throwaway database, applies the migrations, and drops it afterwards. That means
+provider-specific behaviour such as `ILIKE` search, numeric precision and cascade
+deletes is genuinely exercised. PostgreSQL must be running on port 5433 for them
+to pass.
 
 ## Building
 
