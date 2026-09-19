@@ -1,0 +1,68 @@
+<section class="heading">
+  <div>
+    <label>{{ 'audit.eyebrow' | t }}</label>
+    <h1>{{ 'audit.title' | t }}</h1>
+    <p>{{ 'audit.subtitle' | t }}</p>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title">
+    <div>
+      <h2>{{ 'audit.title' | t }}</h2>
+      <p>{{ 'audit.count' | t: { count: entries().length } }}</p>
+    </div>
+    <div class="toolbar">
+      <select [ngModel]="entityFilter()" (ngModelChange)="entityFilter.set($event); reload()" name="entityFilter">
+        <option value="">{{ 'audit.allEntities' | t }}</option>
+        @for (entity of entityTypes; track entity) {
+          <option [value]="entity">{{ entityLabel(entity) }}</option>
+        }
+      </select>
+      <select [ngModel]="actionFilter()" (ngModelChange)="actionFilter.set($event); reload()" name="actionFilter">
+        <option value="">{{ 'audit.allActions' | t }}</option>
+        @for (action of actions; track action) {
+          <option [value]="action">{{ actionLabel(action) }}</option>
+        }
+      </select>
+      <a (click)="reload()">{{ 'common.refresh' | t }} ↻</a>
+    </div>
+  </div>
+
+  <div class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'audit.time' | t }}</th>
+          <th>{{ 'audit.user' | t }}</th>
+          <th>{{ 'audit.action' | t }}</th>
+          <th>{{ 'audit.entity' | t }}</th>
+          <th>{{ 'audit.details' | t }}</th>
+          <th>{{ 'audit.ip' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of entries(); track entry.id) {
+          <tr class="audit-row" (click)="toggle(entry)">
+            <td class="nowrap">{{ entry.occurredAt | ldate: 'dayTime' }}</td>
+            <td><span class="ltr">{{ entry.userEmail }}</span></td>
+            <td><em [class]="toneFor(entry.action)">{{ actionLabel(entry.action) }}</em></td>
+            <td>{{ entityLabel(entry.entityType) }}</td>
+            <td>
+              {{ entry.summary || ('common.none' | t) }}
+              @if (entry.changes) { <i class="expand">{{ expanded() === entry.id ? '▴' : '▾' }}</i> }
+            </td>
+            <td><span class="ltr">{{ entry.ipAddress || ('common.none' | t) }}</span></td>
+          </tr>
+          @if (expanded() === entry.id && entry.changes) {
+            <tr class="audit-detail">
+              <td colspan="6"><pre>{{ formatChanges(entry.changes) }}</pre></td>
+            </tr>
+          }
+        } @empty {
+          <tr><td colspan="6" class="empty">{{ 'audit.empty' | t }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

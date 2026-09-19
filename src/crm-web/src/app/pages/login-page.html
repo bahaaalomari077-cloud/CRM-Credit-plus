@@ -1,0 +1,59 @@
+<div class="login-shell" [attr.dir]="i18n.direction()">
+  <div class="login-toolbar">
+    <div class="seg">
+      <button type="button" [class.on]="i18n.language() === 'ar'" (click)="setLanguage('ar')">ع</button>
+      <button type="button" [class.on]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
+    </div>
+    <button type="button" class="icon-btn" (click)="themes.toggle()">
+      {{ themes.theme() === 'dark' ? '☀' : '☾' }}
+    </button>
+  </div>
+
+  <form class="login-card" (ngSubmit)="submit()">
+    <div class="login-brand">
+      <span class="brand-mark">C+</span>
+      <b>{{ 'app.brand' | t }}</b>
+    </div>
+
+    <h1>{{ 'login.title' | t }}</h1>
+    <p class="login-sub">{{ 'login.subtitle' | t }}</p>
+
+    <label>
+      {{ 'login.email' | t }}
+      <input
+        type="email"
+        name="email"
+        autocomplete="username"
+        required
+        class="ltr"
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+        placeholder="name@company.com"
+      />
+    </label>
+
+    <label>
+      {{ 'login.password' | t }}
+      <input
+        type="password"
+        name="password"
+        autocomplete="current-password"
+        required
+        class="ltr"
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
+        placeholder="••••••••"
+      />
+    </label>
+
+    @if (error(); as message) {
+      <p class="form-error">{{ message }}</p>
+    }
+
+    <button type="submit" class="login-submit" [disabled]="busy()">
+      {{ (busy() ? 'login.signingIn' : 'login.submit') | t }}
+    </button>
+
+    <p class="login-hint">{{ 'login.demoHint' | t }}</p>
+  </form>
+</div>

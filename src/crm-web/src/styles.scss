@@ -163,3 +163,57 @@ table{text-align:start}
 .quick-menu,.search-results{inset-inline-start:0}
 @media(max-width:1050px){main{margin-inline-start:215px}}
 @media(max-width:720px){main{margin-inline-start:0}.seg button{padding:6px 7px;min-width:28px}}
+
+/* --- login screen --- */
+.login-shell{min-height:100vh;background:var(--bg);display:grid;place-items:center;padding:24px;position:relative}
+.login-toolbar{position:absolute;top:20px;inset-inline-end:24px;display:flex;gap:9px;align-items:center}
+.login-card{width:min(400px,100%);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:32px;display:grid;gap:15px;box-shadow:var(--shadow-lg)}
+.login-brand{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.login-brand b{font-size:17px;font-weight:800;color:var(--ink)}
+.login-card h1{margin:0;font-size:22px;letter-spacing:-.5px}
+.login-sub{margin:0 0 6px;color:var(--muted);font-size:12px}
+.login-card label{display:grid;gap:6px;color:var(--ink-2);font-size:11px;font-weight:700}
+.login-card input{border:1px solid var(--field-line);border-radius:9px;padding:11px;outline-color:var(--accent);font:13px Segoe UI,Tahoma,Arial,sans-serif;background:var(--surface);color:var(--ink);width:100%}
+.login-submit{border:0;border-radius:9px;padding:12px;background:var(--accent);color:#fff;font:700 13px inherit;cursor:pointer;margin-top:6px}
+.login-submit[disabled]{opacity:.65;cursor:progress}
+.login-hint{margin:0;text-align:center;font-size:10px;color:var(--muted);background:var(--line-soft);padding:8px;border-radius:8px}
+
+/* --- user menu --- */
+.profile{position:relative}
+.icon-btn.small{width:26px;height:26px;font-size:13px;margin-inline-start:auto}
+.user-menu{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);padding:6px;margin-top:8px;display:grid;gap:2px}
+.user-menu a,.user-menu button{display:block;width:100%;text-align:start;padding:9px;border:0;background:none;border-radius:7px;cursor:pointer;font:12px inherit;color:var(--ink);text-decoration:none}
+.user-menu a:hover,.user-menu button:hover{background:var(--accent-soft);color:var(--accent-ink)}
+
+/* --- banners --- */
+.banner.info{background:var(--info-bg);border-color:var(--info-ink);color:var(--info-ink)}
+
+/* --- role + status badges --- */
+td>em.admin{background:var(--accent-soft);color:var(--accent-ink)}
+td>em.manager{background:var(--warn-bg);color:var(--warn-ink)}
+td>em.agent{background:var(--info-bg);color:var(--info-ink)}
+td>em.viewer{background:var(--line-soft);color:var(--muted)}
+.muted-dash{color:var(--muted);font-size:11px}
+
+/* --- audit table --- */
+.audit-row{cursor:pointer}
+.audit-row:hover{background:var(--accent-soft)}
+.nowrap{white-space:nowrap}
+.expand{font-style:normal;color:var(--muted);margin-inline-start:5px;font-size:9px}
+.audit-detail>td{background:var(--surface-2);padding:0}
+.audit-detail pre{margin:0;padding:13px 20px;font:11px ui-monospace,Consolas,monospace;color:var(--ink-2);white-space:pre-wrap;word-break:break-word;direction:ltr;text-align:left}
+
+/* --- email composer --- */
+.crm-form.wide{width:min(600px,100%)}
+.crm-form textarea{border:1px solid var(--field-line);border-radius:8px;padding:10px;outline-color:var(--accent);font:13px Segoe UI,Tahoma,Arial,sans-serif;background:var(--surface);color:var(--ink);width:100%;resize:vertical}
+.crm-form input[readonly]{background:var(--line-soft);color:var(--muted)}
+.form-note{margin:0;font-size:10px;color:var(--muted);background:var(--line-soft);padding:8px 10px;border-radius:8px}
+.email-history{display:grid;gap:7px;border-top:1px solid var(--line);padding-top:13px}
+.email-history>b{font-size:11px;color:var(--ink-2)}
+.email-row{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--ink-2)}
+.email-row em{font-style:normal;font-size:9px;border-radius:15px;padding:3px 7px}
+.email-row em.converted{background:var(--ok-bg);color:var(--ok-ink)}
+.email-row em.lost{background:var(--bad-bg);color:var(--bad-ink)}
+.email-row em.new{background:var(--accent-soft);color:var(--accent-ink)}
+.email-row span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email-row small{color:var(--muted);font-size:9px;white-space:nowrap}

@@ -9,6 +9,9 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options) : DbCon
     public DbSet<LeadEntity> Leads => Set<LeadEntity>();
     public DbSet<DealEntity> Deals => Set<DealEntity>();
     public DbSet<ActivityEntity> Activities => Set<ActivityEntity>();
+    public DbSet<UserEntity> Users => Set<UserEntity>();
+    public DbSet<AuditEntryEntity> AuditEntries => Set<AuditEntryEntity>();
+    public DbSet<EmailMessageEntity> EmailMessages => Set<EmailMessageEntity>();
 
     /// <summary>
     /// Npgsql only accepts UTC for 'timestamp with time zone', but callers may send any
@@ -16,6 +19,10 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options) : DbCon
     /// </summary>
     private static readonly ValueConverter<DateTimeOffset, DateTimeOffset> UtcConverter =
         new(value => value.ToUniversalTime(), value => value.ToUniversalTime());
+
+    private static readonly ValueConverter<DateTimeOffset?, DateTimeOffset?> NullableUtcConverter =
+        new(value => value.HasValue ? value.Value.ToUniversalTime() : value,
+            value => value.HasValue ? value.Value.ToUniversalTime() : value);
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -63,6 +70,52 @@ public sealed class CrmDbContext(DbContextOptions<CrmDbContext> options) : DbCon
             entity.Property(activity => activity.CreatedAt).HasConversion(UtcConverter);
             entity.HasIndex(activity => activity.IsCompleted);
             entity.HasIndex(activity => activity.DueAt);
+        });
+
+        builder.Entity<UserEntity>(entity =>
+        {
+            entity.ToTable("users");
+            entity.HasKey(user => user.Id);
+            entity.Property(user => user.Email).HasMaxLength(200).IsRequired();
+            entity.Property(user => user.FullName).HasMaxLength(200).IsRequired();
+            entity.Property(user => user.PasswordHash).HasMaxLength(400).IsRequired();
+            entity.Property(user => user.Role).HasMaxLength(30).IsRequired();
+            entity.Property(user => user.CreatedAt).HasConversion(UtcConverter);
+            entity.Property(user => user.LastLoginAt).HasConversion(NullableUtcConverter);
+            // Logins look up by email, and no two accounts may share one.
+            entity.HasIndex(user => user.Email).IsUnique();
+        });
+
+        builder.Entity<AuditEntryEntity>(entity =>
+        {
+            entity.ToTable("audit_entries");
+            entity.HasKey(audit => audit.Id);
+            entity.Property(audit => audit.UserEmail).HasMaxLength(200);
+            entity.Property(audit => audit.Action).HasMaxLength(40).IsRequired();
+            entity.Property(audit => audit.EntityType).HasMaxLength(40).IsRequired();
+            entity.Property(audit => audit.EntityId).HasMaxLength(64);
+            entity.Property(audit => audit.Summary).HasMaxLength(400);
+            entity.Property(audit => audit.IpAddress).HasMaxLength(64);
+            entity.Property(audit => audit.OccurredAt).HasConversion(UtcConverter);
+            entity.HasIndex(audit => audit.OccurredAt);
+            entity.HasIndex(audit => new { audit.EntityType, audit.EntityId });
+        });
+
+        builder.Entity<EmailMessageEntity>(entity =>
+        {
+            entity.ToTable("email_messages");
+            entity.HasKey(email => email.Id);
+            entity.Property(email => email.ToAddress).HasMaxLength(200).IsRequired();
+            entity.Property(email => email.ToName).HasMaxLength(200);
+            entity.Property(email => email.Subject).HasMaxLength(300).IsRequired();
+            entity.Property(email => email.Status).HasMaxLength(20).IsRequired();
+            entity.Property(email => email.Error).HasMaxLength(1000);
+            entity.Property(email => email.RelatedType).HasMaxLength(40);
+            entity.Property(email => email.SentByName).HasMaxLength(200);
+            entity.Property(email => email.CreatedAt).HasConversion(UtcConverter);
+            entity.Property(email => email.SentAt).HasConversion(NullableUtcConverter);
+            entity.HasIndex(email => email.CreatedAt);
+            entity.HasIndex(email => new { email.RelatedType, email.RelatedId });
         });
     }
 }
@@ -115,4 +168,56 @@ public sealed class ActivityEntity
     public DateTimeOffset CreatedAt { get; set; }
 
     public Activity ToRecord() => new(Id, Title, Type, RelatedTo, DueAt, IsCompleted, Owner, CreatedAt);
+}
+
+public sealed class UserEntity
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; } = "";
+    public string FullName { get; set; } = "";
+    public string PasswordHash { get; set; } = "";
+    public string Role { get; set; } = Roles.Viewer;
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastLoginAt { get; set; }
+
+    public User ToRecord() => new(Id, Email, FullName, Role, IsActive, CreatedAt, LastLoginAt);
+}
+
+public sealed class AuditEntryEntity
+{
+    public long Id { get; set; }
+    public DateTimeOffset OccurredAt { get; set; }
+    public Guid? UserId { get; set; }
+    public string UserEmail { get; set; } = "";
+    public string Action { get; set; } = "";
+    public string EntityType { get; set; } = "";
+    public string EntityId { get; set; } = "";
+    public string? Summary { get; set; }
+    public string? Changes { get; set; }
+    public string? IpAddress { get; set; }
+
+    public AuditEntry ToRecord() =>
+        new(Id, OccurredAt, UserId, UserEmail, Action, EntityType, EntityId, Summary, Changes, IpAddress);
+}
+
+public sealed class EmailMessageEntity
+{
+    public Guid Id { get; set; }
+    public string ToAddress { get; set; } = "";
+    public string ToName { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string Body { get; set; } = "";
+    public string Status { get; set; } = EmailStatuses.Queued;
+    public string? Error { get; set; }
+    public string RelatedType { get; set; } = "";
+    public Guid? RelatedId { get; set; }
+    public Guid SentByUserId { get; set; }
+    public string SentByName { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? SentAt { get; set; }
+
+    public EmailMessage ToRecord() =>
+        new(Id, ToAddress, ToName, Subject, Body, Status, Error, RelatedType, RelatedId,
+            SentByUserId, SentByName, CreatedAt, SentAt);
 }

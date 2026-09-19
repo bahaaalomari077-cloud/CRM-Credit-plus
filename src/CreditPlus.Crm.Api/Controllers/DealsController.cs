@@ -1,5 +1,6 @@
 using CreditPlus.Crm.Api.Application;
 using CreditPlus.Crm.Api.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CreditPlus.Crm.Api.Controllers;
@@ -7,6 +8,7 @@ namespace CreditPlus.Crm.Api.Controllers;
 [ApiController]
 [Route("api/crm/deals")]
 [Produces("application/json")]
+[Authorize]
 public sealed class DealsController(ICrmStore store) : ControllerBase
 {
     [HttpGet]
@@ -25,6 +27,7 @@ public sealed class DealsController(ICrmStore store) : ControllerBase
         store.FindDeal(id) is { } deal ? Ok(deal) : NotFound();
 
     [HttpPost]
+    [Authorize(Policy = Roles.CanWrite)]
     [ProducesResponseType<Deal>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<Deal> Create(CreateDealRequest request)
@@ -34,18 +37,21 @@ public sealed class DealsController(ICrmStore store) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = Roles.CanWrite)]
     [ProducesResponseType<Deal>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<Deal> Update(Guid id, UpdateDealRequest request) => Ok(store.UpdateDeal(id, request));
 
     [HttpPatch("{id:guid}/stage")]
+    [Authorize(Policy = Roles.CanWrite)]
     [ProducesResponseType<Deal>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<Deal> MoveStage(Guid id, MoveStageRequest request) => Ok(store.MoveDeal(id, request.Stage));
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Roles.CanWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult Delete(Guid id) => store.DeleteDeal(id) ? NoContent() : NotFound();

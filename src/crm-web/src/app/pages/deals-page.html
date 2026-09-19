@@ -9,7 +9,9 @@
       <button [class.selected]="view() === 'board'" (click)="view.set('board')">{{ 'deals.viewBoard' | t }}</button>
       <button [class.selected]="view() === 'table'" (click)="view.set('table')">{{ 'deals.viewTable' | t }}</button>
     </div>
-    <button class="quick" (click)="openCreate()">{{ 'deals.add' | t }}</button>
+    @if (auth.canWrite()) {
+      <button class="quick" (click)="openCreate()">{{ 'deals.add' | t }}</button>
+    }
   </div>
 </section>
 

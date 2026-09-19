@@ -1,13 +1,13 @@
 # Credit Plus CRM
 
-A small sales CRM: an ASP.NET Core 10 API backed by PostgreSQL, and an Angular 21 single-page app that speaks Arabic (RTL) and English (LTR) with light and dark themes.
+A small sales CRM: an ASP.NET Core 10 API backed by PostgreSQL, and an Angular 21 single-page app that speaks Arabic (RTL) and English (LTR) with light and dark themes. Access is controlled by signed-in accounts with roles, and every change is written to an audit trail.
 
 ## Layout
 
 | Path | What it is |
 | --- | --- |
 | `src/CreditPlus.Crm.Api` | REST API, EF Core + PostgreSQL, OpenAPI document |
-| `src/crm-web` | Angular client (dashboard, leads, deals, activities, reports, settings) |
+| `src/crm-web` | Angular client (dashboard, leads, deals, activities, reports, users, audit, settings) |
 
 ## Prerequisites
 
@@ -38,6 +38,56 @@ npm start
 
 Open <http://localhost:4200>. If the API is not running, the app shows a banner and empty states rather than failing.
 
+## Signing in
+
+The first run seeds two accounts:
+
+| Email | Password | Role |
+| --- | --- | --- |
+| `admin@creditplus.local` | `Admin123!` | Admin |
+| `agent@creditplus.local` | `Agent123!` | Agent |
+
+**Change these before putting the app anywhere other than your own machine.** They exist
+so a fresh database can be signed into at all.
+
+### Roles
+
+| Role | May do |
+| --- | --- |
+| Viewer | Read every record; no changes |
+| Agent | Everything a Viewer can, plus create, edit, delete, and send email |
+| Manager | Everything an Agent can, plus read the audit trail |
+| Admin | Everything, plus manage user accounts |
+
+The API enforces these with authorization policies; the client hides controls it knows
+would be refused, so the UI and the API agree. The last active administrator cannot be
+deleted, demoted, or disabled.
+
+Sessions use a JWT held in `localStorage`. `Jwt:SigningKey` in `appsettings.json` must be
+at least 32 characters — the API refuses to start otherwise. Set a real secret through
+`Jwt__SigningKey` in any environment that matters.
+
+## Audit trail
+
+Every create, update, delete, stage move, sign-in, failed sign-in, and sent email is
+recorded with the acting user, their IP address, and a JSON diff of what changed. Entries
+are written through their own database context, so they survive a rollback in the request
+that produced them, and a failure to audit is logged rather than failing the operation.
+
+Managers and admins read the trail at `/audit`, filtered by record type or action; each
+row expands to show the before/after values.
+
+## Email
+
+`POST /api/emails` sends a message and files it against a lead or deal, so the record's
+history shows what was sent, by whom, and whether it was delivered. Failures are stored
+on the message rather than discarded.
+
+With `Email:Enabled` set to `false` (the default) messages are written as `.eml` files to
+`App_Data/outbox` instead of being delivered, so the feature works without credentials.
+Set the SMTP host, port, and credentials in `appsettings.json` and flip `Email:Enabled`
+to `true` to send for real.
+
 ## Data
 
 Data lives in PostgreSQL. On startup the API applies any pending EF Core migrations and seeds demo rows into empty tables, so a fresh `crm-db` is usable immediately.
@@ -63,7 +113,7 @@ The light and dark themes are CSS custom properties defined on `:root` and `[dat
 
 ## API
 
-Base path `/api/crm`. In development the OpenAPI document is at `/openapi/v1.json`.
+Base path `/api/crm`. Every endpoint except `/api/auth/login` requires a bearer token (`Authorization: Bearer <token>`). In development the OpenAPI document is at `/openapi/v1.json`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -77,6 +127,17 @@ Base path `/api/crm`. In development the OpenAPI document is at `/openapi/v1.jso
 | GET | `/activities?completed=` | List activities |
 | POST · PUT · DELETE | `/activities`, `/activities/{id}` | Create, update, remove an activity |
 | PATCH | `/activities/{id}/complete`, `/activities/{id}/reopen` | Toggle completion |
+
+Authentication and administration sit outside `/api/crm`:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| POST | `/api/auth/login` | Exchange credentials for a token |
+| GET | `/api/auth/me` | The signed-in user, for restoring a session |
+| POST | `/api/auth/change-password` | Change your own password |
+| GET · POST · PUT · DELETE | `/api/users` | Manage accounts (Admin) |
+| GET | `/api/audit?entityType=&entityId=&action=&limit=` | Read the audit trail (Manager, Admin) |
+| GET · POST | `/api/emails` | List and send messages |
 
 Deal stages are `Qualified`, `Proposal`, `Negotiation`, `Won`, `Lost`; lead statuses are `New`, `Contacted`, `Qualified`, `Converted`, `Lost`. The API stores these English values and the UI displays Arabic labels for them, mapped in `src/crm-web/src/app/core/crm.models.ts`.
 

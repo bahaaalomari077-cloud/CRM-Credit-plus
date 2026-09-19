@@ -1,19 +1,59 @@
 @HostAddress = http://localhost:5233
 
+### Sign in (copy accessToken into @token below)
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@creditplus.local",
+  "password": "Admin123!"
+}
+
+### Paste the token from the response above
+@token = PASTE_ACCESS_TOKEN_HERE
+
+### Who am I
+GET {{HostAddress}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Users (Admin only)
+GET {{HostAddress}}/api/users
+Authorization: Bearer {{token}}
+
+### Audit trail (Manager or Admin)
+GET {{HostAddress}}/api/audit?limit=50
+Authorization: Bearer {{token}}
+
+### Send an email
+POST {{HostAddress}}/api/emails
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toAddress": "sarah@alnoor.com",
+  "toName": "Sarah Haddad",
+  "subject": "Your financing proposal",
+  "body": "Hello Sarah, the revised terms are ready."
+}
+
 ### Dashboard summary
 GET {{HostAddress}}/api/crm/dashboard
+Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Leads
 GET {{HostAddress}}/api/crm/leads
+Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Leads filtered
 GET {{HostAddress}}/api/crm/leads?search=noor&status=Qualified
+Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Create a lead
 POST {{HostAddress}}/api/crm/leads
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -26,14 +66,17 @@ Content-Type: application/json
 
 ### Deals
 GET {{HostAddress}}/api/crm/deals
+Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Deal stages
 GET {{HostAddress}}/api/crm/deals/stages
+Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Create a deal
 POST {{HostAddress}}/api/crm/deals
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -48,6 +91,7 @@ Content-Type: application/json
 
 ### Move a deal to another stage
 PATCH {{HostAddress}}/api/crm/deals/00000000-0000-0000-0000-000000000000/stage
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -56,10 +100,12 @@ Content-Type: application/json
 
 ### Activities
 GET {{HostAddress}}/api/crm/activities?completed=false
+Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Create an activity
 POST {{HostAddress}}/api/crm/activities
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

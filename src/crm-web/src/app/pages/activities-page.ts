@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../core/auth.service';
 import { CrmStore } from '../core/crm-store.service';
 import { I18nService, TranslationKey } from '../core/i18n/i18n.service';
 import { TranslatePipe } from '../core/i18n/translate.pipe';
@@ -32,6 +33,7 @@ const blankActivity = (): ActivityForm => {
 })
 export class ActivitiesPage {
   protected readonly store = inject(CrmStore);
+  protected readonly auth = inject(AuthService);
   private readonly i18n = inject(I18nService);
   protected readonly types = ACTIVITY_TYPES;
 

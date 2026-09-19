@@ -1,114 +1,134 @@
-<div class="app-shell" [attr.dir]="i18n.direction()">
-  <aside class="sidebar">
-    <a class="brand" routerLink="/dashboard">
-      <span class="brand-mark">C+</span>
-      <span>{{ 'app.brand' | t }}</span>
-    </a>
+@if (isLoginRoute()) {
+  <router-outlet />
+} @else {
+  <div class="app-shell" [attr.dir]="i18n.direction()">
+    <aside class="sidebar">
+      <a class="brand" routerLink="/dashboard">
+        <span class="brand-mark">C+</span>
+        <span>{{ 'app.brand' | t }}</span>
+      </a>
 
-    <div class="workspace">
-      <span>CP</span>
-      <b>{{ 'app.workspace' | t }}<small>{{ 'app.workspaceSub' | t }}</small></b>
-    </div>
-
-    <nav>
-      @for (item of mainNav; track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMenus()">
-          <i>{{ item.icon }}</i>{{ item.key | t }}
-          @if (item.badge && item.badge()) {
-            <em>{{ item.badge!() }}</em>
-          }
-        </a>
-      }
-    </nav>
-
-    <div class="divider"></div>
-    <p>{{ 'app.admin' | t }}</p>
-    <nav>
-      @for (item of adminNav; track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMenus()">
-          <i>{{ item.icon }}</i>{{ item.key | t }}
-        </a>
-      }
-    </nav>
-
-    <footer>
-      <div class="help">
-        <strong>{{ 'app.help' | t }}</strong>
-        <small>{{ 'app.helpBody' | t }}</small>
+      <div class="workspace">
+        <span>CP</span>
+        <b>{{ 'app.workspace' | t }}<small>{{ 'app.workspaceSub' | t }}</small></b>
       </div>
-      <div class="profile">
-        <span>AK</span>
-        <b>Ahmad Khalil<small>{{ 'app.roleSalesManager' | t }}</small></b>
-      </div>
-    </footer>
-  </aside>
 
-  <main>
-    <header>
-      <div class="crumb">CRM <b>/</b> <strong>{{ 'app.workspace' | t }}</strong></div>
-
-      <div class="actions">
-        <label class="search">
-          ⌕
-          <input
-            [value]="store.search()"
-            (input)="onSearch($any($event.target).value)"
-            [placeholder]="'app.search' | t"
-          />
-        </label>
-
-        @if (searchOpen() && searchResults().length) {
-          <div class="search-results">
-            @for (result of searchResults(); track result.label + result.path) {
-              <button (click)="goTo(result.path)">
-                <i>{{ result.icon }}</i>
-                <span><b>{{ result.label }}</b><small>{{ result.sub }}</small></span>
-              </button>
+      <nav>
+        @for (item of mainNav(); track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMenus()">
+            <i>{{ item.icon }}</i>{{ item.key | t }}
+            @if (item.badge && item.badge()) {
+              <em>{{ item.badge!() }}</em>
             }
-          </div>
+          </a>
         }
+      </nav>
 
-        <!-- Language switch -->
-        <div class="seg" role="group" [attr.aria-label]="'app.language' | t">
-          <button [class.on]="i18n.language() === 'ar'" (click)="setLanguage('ar')">ع</button>
-          <button [class.on]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
+      <div class="divider"></div>
+      <p>{{ 'app.admin' | t }}</p>
+      <nav>
+        @for (item of adminNav(); track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMenus()">
+            <i>{{ item.icon }}</i>{{ item.key | t }}
+          </a>
+        }
+      </nav>
+
+      <footer>
+        <div class="help">
+          <strong>{{ 'app.help' | t }}</strong>
+          <small>{{ 'app.helpBody' | t }}</small>
         </div>
 
-        <!-- Theme switch -->
-        <button
-          class="icon-btn"
-          (click)="themes.toggle()"
-          [title]="(themes.theme() === 'dark' ? 'app.themeLight' : 'app.themeDark') | t"
-        >
-          {{ themes.theme() === 'dark' ? '☀' : '☾' }}
-        </button>
-
-        <button class="quick" (click)="showQuickAdd.set(!showQuickAdd())">
-          + <span>{{ 'app.addNew' | t }}</span>
-        </button>
-
-        @if (showQuickAdd()) {
-          <div class="quick-menu">
-            <a routerLink="/leads" (click)="closeMenus()">◉ {{ 'nav.leads' | t }}</a>
-            <a routerLink="/deals" (click)="closeMenus()">◇ {{ 'nav.deals' | t }}</a>
-            <a routerLink="/activities" (click)="closeMenus()">✓ {{ 'nav.activities' | t }}</a>
+        @if (auth.user(); as user) {
+          <div class="profile">
+            <span>{{ initials(user.fullName) }}</span>
+            <b>{{ user.fullName }}<small>{{ roleLabel(user.role) }}</small></b>
+            <button class="icon-btn small" (click)="showUserMenu.set(!showUserMenu())" [title]="'auth.signOut' | t">
+              ⋯
+            </button>
           </div>
+          @if (showUserMenu()) {
+            <div class="user-menu">
+              <a routerLink="/settings" (click)="closeMenus()">⚙ {{ 'nav.settings' | t }}</a>
+              <button (click)="signOut()">⇠ {{ 'auth.signOut' | t }}</button>
+            </div>
+          }
         }
-      </div>
-    </header>
+      </footer>
+    </aside>
 
-    @if (store.offline()) {
-      <div class="banner">
-        ⚠ {{ 'app.offline' | t }}
-        <button (click)="store.refreshAll()">{{ 'app.retry' | t }}</button>
-      </div>
-    } @else if (store.error(); as message) {
-      <div class="banner error">
-        ⚠ {{ message }}
-        <button (click)="store.dismissError()">{{ 'app.close' | t }}</button>
-      </div>
-    }
+    <main>
+      <header>
+        <div class="crumb">CRM <b>/</b> <strong>{{ 'app.workspace' | t }}</strong></div>
 
-    <router-outlet />
-  </main>
-</div>
+        <div class="actions">
+          <label class="search">
+            ⌕
+            <input
+              [value]="store.search()"
+              (input)="onSearch($any($event.target).value)"
+              [placeholder]="'app.search' | t"
+            />
+          </label>
+
+          @if (searchOpen() && searchResults().length) {
+            <div class="search-results">
+              @for (result of searchResults(); track result.label + result.path) {
+                <button (click)="goTo(result.path)">
+                  <i>{{ result.icon }}</i>
+                  <span><b>{{ result.label }}</b><small>{{ result.sub }}</small></span>
+                </button>
+              }
+            </div>
+          }
+
+          <div class="seg" role="group" [attr.aria-label]="'app.language' | t">
+            <button [class.on]="i18n.language() === 'ar'" (click)="setLanguage('ar')">ع</button>
+            <button [class.on]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
+          </div>
+
+          <button
+            class="icon-btn"
+            (click)="themes.toggle()"
+            [title]="(themes.theme() === 'dark' ? 'app.themeLight' : 'app.themeDark') | t"
+          >
+            {{ themes.theme() === 'dark' ? '☀' : '☾' }}
+          </button>
+
+          @if (auth.canWrite()) {
+            <button class="quick" (click)="showQuickAdd.set(!showQuickAdd())">
+              + <span>{{ 'app.addNew' | t }}</span>
+            </button>
+
+            @if (showQuickAdd()) {
+              <div class="quick-menu">
+                <a routerLink="/leads" (click)="closeMenus()">◉ {{ 'nav.leads' | t }}</a>
+                <a routerLink="/deals" (click)="closeMenus()">◇ {{ 'nav.deals' | t }}</a>
+                <a routerLink="/activities" (click)="closeMenus()">✓ {{ 'nav.activities' | t }}</a>
+              </div>
+            }
+          }
+        </div>
+      </header>
+
+      @if (auth.isAuthenticated() && !auth.canWrite()) {
+        <div class="banner info">👁 {{ 'auth.readOnly' | t }}</div>
+      }
+
+      @if (store.offline()) {
+        <div class="banner">
+          ⚠ {{ 'app.offline' | t }}
+          <button (click)="store.refreshAll()">{{ 'app.retry' | t }}</button>
+        </div>
+      } @else if (store.error(); as message) {
+        <div class="banner error">
+          ⚠ {{ message }}
+          <button (click)="store.dismissError()">{{ 'app.close' | t }}</button>
+        </div>
+      }
+
+      <router-outlet />
+    </main>
+  </div>
+}

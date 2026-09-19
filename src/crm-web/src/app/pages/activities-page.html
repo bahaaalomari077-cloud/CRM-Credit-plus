@@ -15,7 +15,9 @@
       <button [class.selected]="filter() === 'done'" (click)="filter.set('done')">{{ 'activities.filterDone' | t }}</button>
       <button [class.selected]="filter() === 'all'" (click)="filter.set('all')">{{ 'common.all' | t }}</button>
     </div>
-    <button class="quick" (click)="openCreate()">{{ 'activities.add' | t }}</button>
+    @if (auth.canWrite()) {
+      <button class="quick" (click)="openCreate()">{{ 'activities.add' | t }}</button>
+    }
   </div>
 </section>
 

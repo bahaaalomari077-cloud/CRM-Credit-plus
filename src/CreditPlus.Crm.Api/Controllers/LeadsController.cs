@@ -1,5 +1,6 @@
 using CreditPlus.Crm.Api.Application;
 using CreditPlus.Crm.Api.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CreditPlus.Crm.Api.Controllers;
@@ -7,6 +8,7 @@ namespace CreditPlus.Crm.Api.Controllers;
 [ApiController]
 [Route("api/crm/leads")]
 [Produces("application/json")]
+[Authorize]
 public sealed class LeadsController(ICrmStore store) : ControllerBase
 {
     [HttpGet]
@@ -21,6 +23,7 @@ public sealed class LeadsController(ICrmStore store) : ControllerBase
         store.FindLead(id) is { } lead ? Ok(lead) : NotFound();
 
     [HttpPost]
+    [Authorize(Policy = Roles.CanWrite)]
     [ProducesResponseType<Lead>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<Lead> Create(CreateLeadRequest request)
@@ -30,12 +33,14 @@ public sealed class LeadsController(ICrmStore store) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = Roles.CanWrite)]
     [ProducesResponseType<Lead>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<Lead> Update(Guid id, UpdateLeadRequest request) => Ok(store.UpdateLead(id, request));
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Roles.CanWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult Delete(Guid id) => store.DeleteLead(id) ? NoContent() : NotFound();

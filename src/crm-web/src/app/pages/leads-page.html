@@ -4,7 +4,9 @@
     <h1>{{ 'leads.title' | t }}</h1>
     <p>{{ 'leads.subtitle' | t }}</p>
   </div>
-  <button class="quick" (click)="openCreate()">{{ 'leads.add' | t }}</button>
+  @if (auth.canWrite()) {
+    <button class="quick" (click)="openCreate()">{{ 'leads.add' | t }}</button>
+  }
 </section>
 
 <section class="panel leads">
@@ -48,8 +50,15 @@
             <td><em [class]="lead.status.toLowerCase()">{{ statusLabel(lead.status) }}</em></td>
             <td>{{ lead.createdAt | ldate: 'short' }}</td>
             <td class="row-actions">
-              <button (click)="openEdit(lead)" [title]="'common.edit' | t">✎</button>
-              <button class="danger" (click)="remove(lead)" [title]="'common.delete' | t">🗑</button>
+              @if (auth.canWrite()) {
+                @if (lead.email) {
+                  <button (click)="openEmail(lead)" [title]="'email.send' | t">✉</button>
+                }
+                <button (click)="openEdit(lead)" [title]="'common.edit' | t">✎</button>
+                <button class="danger" (click)="remove(lead)" [title]="'common.delete' | t">🗑</button>
+              } @else {
+                <span class="muted-dash">—</span>
+              }
             </td>
           </tr>
         } @empty {
@@ -127,6 +136,71 @@
       <footer>
         <button type="button" (click)="showForm.set(false)">{{ 'common.cancel' | t }}</button>
         <button type="submit" [disabled]="store.loading()">{{ 'leads.saveLead' | t }}</button>
+      </footer>
+    </form>
+  </div>
+}
+
+@if (showEmail() && emailTarget(); as lead) {
+  <div class="modal-backdrop" (click)="showEmail.set(false)">
+    <form class="crm-form wide" (click)="$event.stopPropagation()" (ngSubmit)="sendEmail()">
+      <div>
+        <h2>{{ 'email.title' | t }}</h2>
+        <button type="button" (click)="showEmail.set(false)">×</button>
+      </div>
+
+      <label>
+        {{ 'email.to' | t }}
+        <input class="ltr" [value]="lead.fullName + ' <' + lead.email + '>'" readonly />
+      </label>
+
+      <label>
+        {{ 'email.subject' | t }}
+        <input
+          required
+          name="subject"
+          [ngModel]="emailForm().subject"
+          (ngModelChange)="updateEmail('subject', $event)"
+        />
+      </label>
+
+      <label>
+        {{ 'email.body' | t }}
+        <textarea
+          required
+          rows="6"
+          name="body"
+          [ngModel]="emailForm().body"
+          (ngModelChange)="updateEmail('body', $event)"
+        ></textarea>
+      </label>
+
+      @if (emailError(); as message) {
+        <p class="form-error">{{ message }}</p>
+      }
+
+      <p class="form-note">{{ 'email.devNote' | t }}</p>
+
+      @if (emailHistory().length) {
+        <div class="email-history">
+          <b>{{ 'email.history' | t }}</b>
+          @for (message of emailHistory(); track message.id) {
+            <div class="email-row">
+              <em [class]="message.status === 'Sent' ? 'converted' : message.status === 'Failed' ? 'lost' : 'new'">
+                {{ emailStatusLabel(message.status) }}
+              </em>
+              <span>{{ message.subject }}</span>
+              <small>{{ message.createdAt | ldate: 'dayTime' }}</small>
+            </div>
+          }
+        </div>
+      }
+
+      <footer>
+        <button type="button" (click)="showEmail.set(false)">{{ 'common.cancel' | t }}</button>
+        <button type="submit" [disabled]="emailBusy()">
+          {{ (emailBusy() ? 'email.sending' : 'email.submit') | t }}
+        </button>
       </footer>
     </form>
   </div>

@@ -17,6 +17,33 @@ public static class CrmDbSeeder
         var today = DateTime.Today;
         var now = DateTimeOffset.UtcNow;
 
+        if (!db.Users.Any())
+        {
+            // First-run administrator. The README tells the operator to change this
+            // password immediately; it exists only so a fresh database can be signed into.
+            db.Users.Add(new UserEntity
+            {
+                Id = Guid.NewGuid(),
+                Email = "admin@creditplus.local",
+                FullName = DefaultOwner,
+                PasswordHash = PasswordHasher.Hash("Admin123!"),
+                Role = Roles.Admin,
+                IsActive = true,
+                CreatedAt = now,
+            });
+
+            db.Users.Add(new UserEntity
+            {
+                Id = Guid.NewGuid(),
+                Email = "agent@creditplus.local",
+                FullName = "Lina Saad",
+                PasswordHash = PasswordHasher.Hash("Agent123!"),
+                Role = Roles.Agent,
+                IsActive = true,
+                CreatedAt = now,
+            });
+        }
+
         if (!db.Leads.Any())
         {
             db.Leads.AddRange(

@@ -5,9 +5,10 @@ using Microsoft.EntityFrameworkCore;
 namespace CreditPlus.Crm.Api.Infrastructure;
 
 /// <summary>Stores the CRM in PostgreSQL through EF Core.</summary>
-public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
+public sealed class PostgresCrmStore(CrmDbContext db, ICurrentUser currentUser, IAuditLog audit) : ICrmStore
 {
-    private const string DefaultOwner = "Ahmad Khalil";
+    /// <summary>New records belong to whoever created them.</summary>
+    private string Owner => currentUser.IsAuthenticated ? currentUser.Name : "System";
 
     public IReadOnlyList<Lead> GetLeads(string? search = null, string? status = null)
     {
@@ -48,12 +49,17 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
             Phone = Text(request.Phone),
             Source = Text(request.Source, "Website"),
             Status = LeadStatuses.New,
-            Owner = DefaultOwner,
+            Owner = Owner,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
         db.Leads.Add(entity);
         db.SaveChanges();
+
+        audit.Record(AuditActions.Created, "Lead", entity.Id.ToString(),
+            $"Created lead {entity.FullName} ({entity.Company})",
+            new { entity.FullName, entity.Company, entity.Email, entity.Source });
+
         return entity.ToRecord();
     }
 
@@ -62,6 +68,7 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
         var entity = db.Leads.FirstOrDefault(lead => lead.Id == id)
             ?? throw new KeyNotFoundException($"Lead {id} was not found.");
 
+        var before = new { entity.FullName, entity.Company, entity.Email, entity.Phone, entity.Source, entity.Status };
         entity.FullName = Required(request.FullName, "Full name");
         entity.Company = Required(request.Company, "Company");
         entity.Email = ValidEmail(request.Email);
@@ -70,10 +77,26 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
         entity.Status = LeadStatuses.Normalize(Text(request.Status, entity.Status));
 
         db.SaveChanges();
+
+        audit.Record(AuditActions.Updated, "Lead", entity.Id.ToString(),
+            $"Updated lead {entity.FullName}",
+            new { before, after = new { entity.FullName, entity.Company, entity.Email, entity.Phone, entity.Source, entity.Status } });
+
         return entity.ToRecord();
     }
 
-    public bool DeleteLead(Guid id) => db.Leads.Where(lead => lead.Id == id).ExecuteDelete() > 0;
+    public bool DeleteLead(Guid id)
+    {
+        var entity = db.Leads.AsNoTracking().FirstOrDefault(lead => lead.Id == id);
+        if (entity is null || db.Leads.Where(lead => lead.Id == id).ExecuteDelete() == 0)
+        {
+            return false;
+        }
+
+        audit.Record(AuditActions.Deleted, "Lead", id.ToString(),
+            $"Deleted lead {entity.FullName} ({entity.Company})");
+        return true;
+    }
 
     public IReadOnlyList<Deal> GetDeals(string? search = null, string? stage = null)
     {
@@ -117,12 +140,17 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
             ExpectedCloseDate = request.ExpectedCloseDate == default
                 ? DateOnly.FromDateTime(DateTime.Today.AddDays(14))
                 : request.ExpectedCloseDate,
-            Owner = DefaultOwner,
+            Owner = Owner,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
         db.Deals.Add(entity);
         db.SaveChanges();
+
+        audit.Record(AuditActions.Created, "Deal", entity.Id.ToString(),
+            $"Created deal {entity.Name} ({entity.Company})",
+            new { entity.Name, entity.Company, entity.Value, entity.Stage });
+
         return entity.ToRecord();
     }
 
@@ -131,6 +159,7 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
         var entity = db.Deals.FirstOrDefault(deal => deal.Id == id)
             ?? throw new KeyNotFoundException($"Deal {id} was not found.");
 
+        var before = new { entity.Name, entity.Company, entity.Value, entity.Stage, entity.Probability };
         entity.Name = Required(request.Name, "Deal name");
         entity.Company = Required(request.Company, "Company");
         entity.Contact = Text(request.Contact);
@@ -143,6 +172,11 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
         }
 
         db.SaveChanges();
+
+        audit.Record(AuditActions.Updated, "Deal", entity.Id.ToString(),
+            $"Updated deal {entity.Name}",
+            new { before, after = new { entity.Name, entity.Company, entity.Value, entity.Stage, entity.Probability } });
+
         return entity.ToRecord();
     }
 
@@ -157,6 +191,7 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
             ?? throw new KeyNotFoundException($"Deal {id} was not found.");
 
         var target = DealStages.Normalize(stage);
+        var previousStage = entity.Stage;
         entity.Stage = target;
         // Closing a deal settles its probability either way, so the pipeline maths stay honest.
         entity.Probability = target switch
@@ -167,10 +202,26 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
         };
 
         db.SaveChanges();
+
+        audit.Record(AuditActions.StageChanged, "Deal", entity.Id.ToString(),
+            $"Moved {entity.Name} from {previousStage} to {target}",
+            new { from = previousStage, to = target, entity.Value });
+
         return entity.ToRecord();
     }
 
-    public bool DeleteDeal(Guid id) => db.Deals.Where(deal => deal.Id == id).ExecuteDelete() > 0;
+    public bool DeleteDeal(Guid id)
+    {
+        var entity = db.Deals.AsNoTracking().FirstOrDefault(deal => deal.Id == id);
+        if (entity is null || db.Deals.Where(deal => deal.Id == id).ExecuteDelete() == 0)
+        {
+            return false;
+        }
+
+        audit.Record(AuditActions.Deleted, "Deal", id.ToString(),
+            $"Deleted deal {entity.Name} ({entity.Company})", new { entity.Value, entity.Stage });
+        return true;
+    }
 
     public IReadOnlyList<Activity> GetActivities(bool? completed = null)
     {
@@ -201,12 +252,16 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
             RelatedTo = Text(request.RelatedTo),
             DueAt = request.DueAt == default ? DateTimeOffset.Now.AddHours(1) : request.DueAt,
             IsCompleted = false,
-            Owner = DefaultOwner,
+            Owner = Owner,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
         db.Activities.Add(entity);
         db.SaveChanges();
+
+        audit.Record(AuditActions.Created, "Activity", entity.Id.ToString(),
+            $"Created task {entity.Title}", new { entity.Title, entity.Type, entity.RelatedTo, entity.DueAt });
+
         return entity.ToRecord();
     }
 
@@ -215,6 +270,7 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
         var entity = db.Activities.FirstOrDefault(activity => activity.Id == id)
             ?? throw new KeyNotFoundException($"Activity {id} was not found.");
 
+        var before = new { entity.Title, entity.Type, entity.RelatedTo, entity.DueAt, entity.IsCompleted };
         entity.Title = Required(request.Title, "Activity title");
         entity.Type = Text(request.Type, entity.Type);
         entity.RelatedTo = Text(request.RelatedTo);
@@ -225,6 +281,11 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
         entity.IsCompleted = request.IsCompleted;
 
         db.SaveChanges();
+
+        audit.Record(AuditActions.Updated, "Activity", entity.Id.ToString(),
+            $"Updated task {entity.Title}",
+            new { before, after = new { entity.Title, entity.Type, entity.RelatedTo, entity.DueAt, entity.IsCompleted } });
+
         return entity.ToRecord();
     }
 
@@ -235,11 +296,24 @@ public sealed class PostgresCrmStore(CrmDbContext db) : ICrmStore
 
         entity.IsCompleted = isCompleted;
         db.SaveChanges();
+
+        audit.Record(AuditActions.Updated, "Activity", entity.Id.ToString(),
+            isCompleted ? $"Completed task {entity.Title}" : $"Reopened task {entity.Title}");
+
         return entity.ToRecord();
     }
 
-    public bool DeleteActivity(Guid id) =>
-        db.Activities.Where(activity => activity.Id == id).ExecuteDelete() > 0;
+    public bool DeleteActivity(Guid id)
+    {
+        var entity = db.Activities.AsNoTracking().FirstOrDefault(activity => activity.Id == id);
+        if (entity is null || db.Activities.Where(activity => activity.Id == id).ExecuteDelete() == 0)
+        {
+            return false;
+        }
+
+        audit.Record(AuditActions.Deleted, "Activity", id.ToString(), $"Deleted task {entity.Title}");
+        return true;
+    }
 
     private static string Required(string? value, string field) =>
         string.IsNullOrWhiteSpace(value)

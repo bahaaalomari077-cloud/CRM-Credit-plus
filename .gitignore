@@ -8,6 +8,9 @@ obj/
 ## Local scratch
 *.tmp
 
+## Development email outbox (.eml drops)
+App_Data/
+
 ## Node / Angular
 node_modules/
 dist/

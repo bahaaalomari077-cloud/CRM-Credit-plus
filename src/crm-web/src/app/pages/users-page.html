@@ -1,0 +1,139 @@
+<section class="heading">
+  <div>
+    <label>{{ 'users.eyebrow' | t }}</label>
+    <h1>{{ 'users.title' | t }}</h1>
+    <p>{{ 'users.subtitle' | t }}</p>
+  </div>
+  <button class="quick" (click)="openCreate()">{{ 'users.add' | t }}</button>
+</section>
+
+@if (error(); as message) {
+  <div class="banner error">⚠ {{ message }}<button (click)="error.set(null)">{{ 'app.close' | t }}</button></div>
+}
+
+<section class="panel">
+  <div class="panel-title">
+    <div>
+      <h2>{{ 'users.title' | t }}</h2>
+      <p>{{ 'users.count' | t: { count: users().length } }}</p>
+    </div>
+    <a (click)="reload()">{{ 'common.refresh' | t }} ↻</a>
+  </div>
+  <div class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'leads.name' | t }}</th>
+          <th>{{ 'login.email' | t }}</th>
+          <th>{{ 'users.role' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'users.lastLogin' | t }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr>
+            <td><b>{{ user.fullName }}</b></td>
+            <td><span class="ltr">{{ user.email }}</span></td>
+            <td><em [class]="user.role.toLowerCase()">{{ roleLabel(user.role) }}</em></td>
+            <td>
+              <em [class]="user.isActive ? 'converted' : 'lost'">
+                {{ (user.isActive ? 'users.active' : 'users.inactive') | t }}
+              </em>
+            </td>
+            <td>
+              {{ user.lastLoginAt ? (user.lastLoginAt | ldate: 'dayTime') : ('users.never' | t) }}
+            </td>
+            <td class="row-actions">
+              <button (click)="openEdit(user)" [title]="'common.edit' | t">✎</button>
+              <button class="danger" (click)="remove(user)" [title]="'common.delete' | t">🗑</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="empty">{{ 'users.empty' | t }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="showForm.set(false)">
+    <form class="crm-form" (click)="$event.stopPropagation()" (ngSubmit)="save()">
+      <div>
+        <h2>{{ (editingId() ? 'users.formEdit' : 'users.formAdd') | t }}</h2>
+        <button type="button" (click)="showForm.set(false)">×</button>
+      </div>
+
+      @if (!editingId()) {
+        <label>
+          {{ 'login.email' | t }}
+          <input
+            type="email"
+            required
+            name="email"
+            class="ltr"
+            [ngModel]="form().email"
+            (ngModelChange)="update('email', $event)"
+            placeholder="name@company.com"
+          />
+        </label>
+      }
+
+      <label>
+        {{ 'leads.fullName' | t }}
+        <input
+          required
+          name="fullName"
+          [ngModel]="form().fullName"
+          (ngModelChange)="update('fullName', $event)"
+        />
+      </label>
+
+      @if (!editingId()) {
+        <label>
+          {{ 'users.password' | t }}
+          <input
+            type="password"
+            required
+            name="password"
+            class="ltr"
+            [ngModel]="form().password"
+            (ngModelChange)="update('password', $event)"
+            [placeholder]="'users.passwordHint' | t"
+          />
+        </label>
+      }
+
+      <div class="pair">
+        <label>
+          {{ 'users.role' | t }}
+          <select name="role" [ngModel]="form().role" (ngModelChange)="update('role', $event)">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ roleLabel(role) }}</option>
+            }
+          </select>
+        </label>
+        @if (editingId()) {
+          <label>
+            {{ 'common.status' | t }}
+            <select
+              name="isActive"
+              [ngModel]="form().isActive"
+              (ngModelChange)="update('isActive', $event === 'true' || $event === true)"
+            >
+              <option [value]="true">{{ 'users.active' | t }}</option>
+              <option [value]="false">{{ 'users.inactive' | t }}</option>
+            </select>
+          </label>
+        }
+      </div>
+
+      <footer>
+        <button type="button" (click)="showForm.set(false)">{{ 'common.cancel' | t }}</button>
+        <button type="submit" [disabled]="loading()">{{ 'users.save' | t }}</button>
+      </footer>
+    </form>
+  </div>
+}
