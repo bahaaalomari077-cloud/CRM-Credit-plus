@@ -5,8 +5,7 @@ obj/
 *.suo
 .vs/
 
-## Runtime data store (seeded on first run)
-App_Data/
+## Local scratch
 *.tmp
 
 ## Node / Angular

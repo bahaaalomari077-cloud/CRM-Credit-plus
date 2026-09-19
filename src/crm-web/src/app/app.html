@@ -1,19 +1,19 @@
-<div class="app-shell" dir="rtl">
+<div class="app-shell" [attr.dir]="i18n.direction()">
   <aside class="sidebar">
     <a class="brand" routerLink="/dashboard">
       <span class="brand-mark">C+</span>
-      <span>Credit<span>Plus</span></span>
+      <span>{{ 'app.brand' | t }}</span>
     </a>
-    <button class="workspace">
+
+    <div class="workspace">
       <span>CP</span>
-      <b>Credit Plus<small>مساحة المبيعات</small></b>
-      <i>⌄</i>
-    </button>
+      <b>{{ 'app.workspace' | t }}<small>{{ 'app.workspaceSub' | t }}</small></b>
+    </div>
 
     <nav>
-      @for (item of nav; track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active">
-          <i>{{ item.icon }}</i>{{ item.name }}
+      @for (item of mainNav; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMenus()">
+          <i>{{ item.icon }}</i>{{ item.key | t }}
           @if (item.badge && item.badge()) {
             <em>{{ item.badge!() }}</em>
           }
@@ -22,43 +22,76 @@
     </nav>
 
     <div class="divider"></div>
-    <p>الإدارة</p>
+    <p>{{ 'app.admin' | t }}</p>
     <nav>
-      <a class="disabled" title="قريبًا"><i>▥</i>التقارير</a>
-      <a class="disabled" title="قريبًا"><i>⚙</i>الإعدادات</a>
+      @for (item of adminNav; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMenus()">
+          <i>{{ item.icon }}</i>{{ item.key | t }}
+        </a>
+      }
     </nav>
 
     <footer>
       <div class="help">
-        <strong>✦ هل تحتاج مساعدة؟</strong>
-        <small>بياناتك محفوظة في App_Data/crm.json وتبقى بعد إعادة تشغيل الـAPI.</small>
+        <strong>{{ 'app.help' | t }}</strong>
+        <small>{{ 'app.helpBody' | t }}</small>
       </div>
       <div class="profile">
         <span>AK</span>
-        <b>Ahmad Khalil<small>مدير المبيعات</small></b>
+        <b>Ahmad Khalil<small>{{ 'app.roleSalesManager' | t }}</small></b>
       </div>
     </footer>
   </aside>
 
   <main>
     <header>
-      <div class="crumb">CRM <b>/</b> <strong>Credit Plus</strong></div>
+      <div class="crumb">CRM <b>/</b> <strong>{{ 'app.workspace' | t }}</strong></div>
+
       <div class="actions">
         <label class="search">
           ⌕
           <input
             [value]="store.search()"
             (input)="onSearch($any($event.target).value)"
-            placeholder="ابحث عن أي شيء..."
+            [placeholder]="'app.search' | t"
           />
-          <kbd>⌘ K</kbd>
         </label>
-        <button class="quick" (click)="showQuickAdd.set(!showQuickAdd())">+ <span>إضافة جديد</span></button>
+
+        @if (searchOpen() && searchResults().length) {
+          <div class="search-results">
+            @for (result of searchResults(); track result.label + result.path) {
+              <button (click)="goTo(result.path)">
+                <i>{{ result.icon }}</i>
+                <span><b>{{ result.label }}</b><small>{{ result.sub }}</small></span>
+              </button>
+            }
+          </div>
+        }
+
+        <!-- Language switch -->
+        <div class="seg" role="group" [attr.aria-label]="'app.language' | t">
+          <button [class.on]="i18n.language() === 'ar'" (click)="setLanguage('ar')">ع</button>
+          <button [class.on]="i18n.language() === 'en'" (click)="setLanguage('en')">EN</button>
+        </div>
+
+        <!-- Theme switch -->
+        <button
+          class="icon-btn"
+          (click)="themes.toggle()"
+          [title]="(themes.theme() === 'dark' ? 'app.themeLight' : 'app.themeDark') | t"
+        >
+          {{ themes.theme() === 'dark' ? '☀' : '☾' }}
+        </button>
+
+        <button class="quick" (click)="showQuickAdd.set(!showQuickAdd())">
+          + <span>{{ 'app.addNew' | t }}</span>
+        </button>
+
         @if (showQuickAdd()) {
           <div class="quick-menu">
-            <a routerLink="/leads" (click)="showQuickAdd.set(false)">+ عميل محتمل</a>
-            <a routerLink="/deals" (click)="showQuickAdd.set(false)">◇ صفقة</a>
-            <a routerLink="/activities" (click)="showQuickAdd.set(false)">✓ مهمة</a>
+            <a routerLink="/leads" (click)="closeMenus()">◉ {{ 'nav.leads' | t }}</a>
+            <a routerLink="/deals" (click)="closeMenus()">◇ {{ 'nav.deals' | t }}</a>
+            <a routerLink="/activities" (click)="closeMenus()">✓ {{ 'nav.activities' | t }}</a>
           </div>
         }
       </div>
@@ -66,13 +99,13 @@
 
     @if (store.offline()) {
       <div class="banner">
-        ⚠ تعذر الاتصال بالـ API على المنفذ 5233. شغّل <code>dotnet run</code> داخل CreditPlus.Crm.Api ثم
-        <button (click)="store.refreshAll()">أعد المحاولة</button>
+        ⚠ {{ 'app.offline' | t }}
+        <button (click)="store.refreshAll()">{{ 'app.retry' | t }}</button>
       </div>
     } @else if (store.error(); as message) {
       <div class="banner error">
         ⚠ {{ message }}
-        <button (click)="store.dismissError()">إغلاق</button>
+        <button (click)="store.dismissError()">{{ 'app.close' | t }}</button>
       </div>
     }
 

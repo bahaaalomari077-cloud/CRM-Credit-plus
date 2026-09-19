@@ -1,8 +1,10 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CrmStore } from '../core/crm-store.service';
-import { DEAL_STAGES, Deal, DealStage, OPEN_STAGES, STAGE_LABELS } from '../core/crm.models';
+import { I18nService, TranslationKey } from '../core/i18n/i18n.service';
+import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { LocaleDatePipe, LocaleMoneyPipe } from '../core/i18n/format.pipes';
+import { DEAL_STAGES, Deal, DealStage, OPEN_STAGES } from '../core/crm.models';
 
 interface DealForm {
   name: string;
@@ -32,11 +34,12 @@ const blankDeal = (): DealForm => ({
 
 @Component({
   selector: 'app-deals-page',
-  imports: [FormsModule, CurrencyPipe, DatePipe],
+  imports: [FormsModule, TranslatePipe, LocaleDatePipe, LocaleMoneyPipe],
   templateUrl: './deals-page.html',
 })
 export class DealsPage {
   protected readonly store = inject(CrmStore);
+  private readonly i18n = inject(I18nService);
   protected readonly stages = DEAL_STAGES;
   protected readonly boardStages = OPEN_STAGES;
 
@@ -71,7 +74,7 @@ export class DealsPage {
   }
 
   protected stageLabel(stage: string): string {
-    return STAGE_LABELS[stage as DealStage] ?? stage;
+    return this.i18n.translate(`stage.${stage}` as TranslationKey);
   }
 
   protected reload(): void {
@@ -122,7 +125,7 @@ export class DealsPage {
   }
 
   protected async remove(deal: Deal): Promise<void> {
-    if (confirm(`حذف الصفقة "${deal.name}"؟`)) {
+    if (confirm(this.i18n.translate('common.confirmDelete', { name: deal.name }))) {
       await this.store.deleteDeal(deal.id);
     }
   }

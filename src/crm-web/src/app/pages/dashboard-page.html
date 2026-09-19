@@ -1,25 +1,25 @@
 <section class="heading">
   <div>
-    <label>نظرة شاملة · {{ today | date: 'EEEE، d MMMM' }}</label>
-    <h1>صباح الخير، أحمد 👋</h1>
-    <p>هذه هي أولويات المبيعات وفرص النمو اليوم.</p>
+    <label>{{ 'dashboard.eyebrow' | t }} · {{ today | ldate: 'long' }}</label>
+    <h1>{{ 'dashboard.greeting' | t }}</h1>
+    <p>{{ 'dashboard.subtitle' | t }}</p>
   </div>
   <div class="period">
-    @for (period of periods; track period) {
-      <button [class.selected]="period === periods[0]">{{ period }}</button>
+    @for (item of periods; track item.id) {
+      <button [class.selected]="period() === item.id" (click)="period.set(item.id)">
+        {{ item.key | t }}
+      </button>
     }
   </div>
 </section>
 
 <section class="stats">
-  @for (stat of stats(); track stat.label) {
+  @for (stat of stats(); track stat.key) {
     <article>
-      <div>
-        <span class="stat-icon" [ngClass]="stat.tone">{{ stat.icon }}</span>
-      </div>
-      <p>{{ stat.label }}</p>
+      <div><span class="stat-icon" [ngClass]="stat.tone">{{ stat.icon }}</span></div>
+      <p>{{ stat.key | t }}</p>
       <h2>{{ stat.value }}@if (stat.unit) {<small>{{ stat.unit }}</small>}</h2>
-      <footer><small>محسوبة مباشرة من بيانات الـ API</small></footer>
+      <footer><small>{{ 'dashboard.statSource' | t }}</small></footer>
     </article>
   }
 </section>
@@ -28,10 +28,10 @@
   <article class="panel">
     <div class="panel-title">
       <div>
-        <h2>خط المبيعات</h2>
-        <p>متابعة قيمة الصفقات حسب المرحلة</p>
+        <h2>{{ 'dashboard.pipeline' | t }}</h2>
+        <p>{{ 'dashboard.pipelineSub' | t }}</p>
       </div>
-      <a routerLink="/deals">عرض الصفقات ←</a>
+      <a routerLink="/deals">{{ 'dashboard.viewDeals' | t }}</a>
     </div>
     <div class="chart">
       @for (stage of store.dashboard().pipeline; track stage.id) {
@@ -39,26 +39,26 @@
           <span>
             <i [ngClass]="stage.accent"></i>
             <b>{{ stageLabel(stage.name) }}</b>
-            <small>{{ stage.dealCount }} صفقات</small>
+            <small>{{ 'dashboard.dealCount' | t: { count: stage.dealCount } }}</small>
           </span>
           <div><i [ngClass]="stage.accent" [style.width.%]="barWidth(stage.value)"></i></div>
-          <strong>{{ stage.value | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</strong>
+          <strong>{{ stage.value | lmoney }}</strong>
         </div>
       } @empty {
-        <p class="empty">لا توجد صفقات بعد.</p>
+        <p class="empty">{{ 'dashboard.noDeals' | t }}</p>
       }
     </div>
     <footer class="total">
-      إجمالي خط المبيعات المفتوح
-      <b>{{ store.dashboard().pipelineValue | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</b>
+      {{ 'dashboard.pipelineTotal' | t }}
+      <b>{{ store.dashboard().pipelineValue | lmoney }}</b>
     </footer>
   </article>
 
   <article class="panel">
     <div class="panel-title">
       <div>
-        <h2>مهام اليوم</h2>
-        <p>{{ store.dashboard().openActivities }} مهام بحاجة للمتابعة</p>
+        <h2>{{ 'dashboard.tasks' | t }}</h2>
+        <p>{{ 'dashboard.tasksSub' | t: { count: store.dashboard().openActivities } }}</p>
       </div>
       <a routerLink="/activities" class="round">+</a>
     </div>
@@ -69,36 +69,36 @@
           <i class="activity-icon">{{ typeIcon(activity.type) }}</i>
           <span>
             <b>{{ activity.title }}</b>
-            <small>{{ activity.relatedTo || typeLabel(activity.type) }} · {{ activity.dueAt | date: 'h:mm a' }}</small>
+            <small>{{ activity.relatedTo || ('type.' + activity.type | t) }} · {{ activity.dueAt | ldate: 'time' }}</small>
           </span>
           <em>{{ initials(activity.owner) }}</em>
         </button>
       } @empty {
-        <p class="empty">لا توجد مهام مفتوحة. عمل رائع!</p>
+        <p class="empty">{{ 'dashboard.noTasks' | t }}</p>
       }
     </div>
-    <a class="all" routerLink="/activities">عرض كل المهام ←</a>
+    <a class="all" routerLink="/activities">{{ 'dashboard.viewAllTasks' | t }}</a>
   </article>
 </section>
 
 <section class="panel deals">
   <div class="panel-title">
     <div>
-      <h2>الصفقات المفتوحة</h2>
-      <p>{{ visibleDeals().length }} فرصة تحتاج متابعة</p>
+      <h2>{{ 'dashboard.openDeals' | t }}</h2>
+      <p>{{ 'dashboard.openDealsSub' | t: { count: visibleDeals().length } }}</p>
     </div>
-    <a routerLink="/deals">عرض الكل ←</a>
+    <a routerLink="/deals">{{ 'common.viewAll' | t }}</a>
   </div>
   <div class="table">
     <table>
       <thead>
         <tr>
-          <th>الصفقة</th>
-          <th>المرحلة</th>
-          <th>القيمة</th>
-          <th>احتمالية الإغلاق</th>
-          <th>تاريخ الإغلاق</th>
-          <th>المالك</th>
+          <th>{{ 'dashboard.deal' | t }}</th>
+          <th>{{ 'common.stage' | t }}</th>
+          <th>{{ 'common.value' | t }}</th>
+          <th>{{ 'dashboard.probability' | t }}</th>
+          <th>{{ 'dashboard.closeDate' | t }}</th>
+          <th>{{ 'common.owner' | t }}</th>
         </tr>
       </thead>
       <tbody>
@@ -111,15 +111,13 @@
               </div>
             </td>
             <td><em [ngClass]="deal.stage.toLowerCase()">{{ stageLabel(deal.stage) }}</em></td>
-            <td><b>{{ deal.value | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</b></td>
-            <td>
-              <span class="prob"><i><b [style.width.%]="deal.probability"></b></i>{{ deal.probability }}%</span>
-            </td>
-            <td>{{ deal.expectedCloseDate | date: 'd MMM' }}</td>
+            <td><b>{{ deal.value | lmoney }}</b></td>
+            <td><span class="prob"><i><b [style.width.%]="deal.probability"></b></i>{{ deal.probability }}%</span></td>
+            <td>{{ deal.expectedCloseDate | ldate: 'short' }}</td>
             <td><i class="owner">{{ initials(deal.owner) }}</i></td>
           </tr>
         } @empty {
-          <tr><td colspan="6" class="empty">لا توجد صفقات مطابقة.</td></tr>
+          <tr><td colspan="6" class="empty">{{ 'dashboard.noMatchingDeals' | t }}</td></tr>
         }
       </tbody>
     </table>

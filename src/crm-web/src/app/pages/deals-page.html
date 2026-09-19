@@ -1,15 +1,15 @@
 <section class="heading">
   <div>
-    <label>خط المبيعات</label>
-    <h1>الصفقات</h1>
-    <p>تابع كل فرصة من التأهيل حتى الإغلاق.</p>
+    <label>{{ 'deals.eyebrow' | t }}</label>
+    <h1>{{ 'deals.title' | t }}</h1>
+    <p>{{ 'deals.subtitle' | t }}</p>
   </div>
   <div class="heading-actions">
     <div class="period">
-      <button [class.selected]="view() === 'board'" (click)="view.set('board')">لوحة</button>
-      <button [class.selected]="view() === 'table'" (click)="view.set('table')">جدول</button>
+      <button [class.selected]="view() === 'board'" (click)="view.set('board')">{{ 'deals.viewBoard' | t }}</button>
+      <button [class.selected]="view() === 'table'" (click)="view.set('table')">{{ 'deals.viewTable' | t }}</button>
     </div>
-    <button class="quick" (click)="openCreate()">+ إضافة صفقة</button>
+    <button class="quick" (click)="openCreate()">{{ 'deals.add' | t }}</button>
   </div>
 </section>
 
@@ -20,13 +20,13 @@
         <header>
           <b>{{ column.label }}</b>
           <span>{{ column.deals.length }}</span>
-          <small>{{ column.total | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</small>
+          <small>{{ column.total | lmoney }}</small>
         </header>
         @for (deal of column.deals; track deal.id) {
           <div class="deal-card">
             <b>{{ deal.name }}</b>
             <small>{{ deal.company }}</small>
-            <strong>{{ deal.value | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</strong>
+            <strong>{{ deal.value | lmoney }}</strong>
             <span class="prob"><i><b [style.width.%]="deal.probability"></b></i>{{ deal.probability }}%</span>
             <footer>
               <select [ngModel]="deal.stage" (ngModelChange)="move(deal, $event)" [name]="'stage-' + deal.id">
@@ -34,46 +34,46 @@
                   <option [value]="stage">{{ stageLabel(stage) }}</option>
                 }
               </select>
-              <button (click)="openEdit(deal)" title="تعديل">✎</button>
-              <button class="danger" (click)="remove(deal)" title="حذف">🗑</button>
+              <button (click)="openEdit(deal)" [title]="'common.edit' | t">✎</button>
+              <button class="danger" (click)="remove(deal)" [title]="'common.delete' | t">🗑</button>
             </footer>
           </div>
         } @empty {
-          <p class="empty">لا توجد صفقات في هذه المرحلة.</p>
+          <p class="empty">{{ 'deals.emptyStage' | t }}</p>
         }
       </article>
     }
   </section>
   <p class="board-note">
-    الصفقات المغلقة بنجاح: <b>{{ wonTotal() | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</b>
+    {{ 'deals.wonTotal' | t }} <b>{{ wonTotal() | lmoney }}</b>
   </p>
 } @else {
   <section class="panel deals">
     <div class="panel-title">
       <div>
-        <h2>كل الصفقات</h2>
-        <p>{{ store.deals().length }} صفقة</p>
+        <h2>{{ 'deals.all' | t }}</h2>
+        <p>{{ 'deals.count' | t: { count: store.deals().length } }}</p>
       </div>
       <div class="toolbar">
         <select [ngModel]="stageFilter()" (ngModelChange)="stageFilter.set($event); reload()" name="stageFilter">
-          <option value="">كل المراحل</option>
+          <option value="">{{ 'deals.allStages' | t }}</option>
           @for (stage of stages; track stage) {
             <option [value]="stage">{{ stageLabel(stage) }}</option>
           }
         </select>
-        <a (click)="reload()">تحديث ↻</a>
+        <a (click)="reload()">{{ 'common.refresh' | t }} ↻</a>
       </div>
     </div>
     <div class="table">
       <table>
         <thead>
           <tr>
-            <th>الصفقة</th>
-            <th>المرحلة</th>
-            <th>القيمة</th>
-            <th>الاحتمالية</th>
-            <th>تاريخ الإغلاق</th>
-            <th>المالك</th>
+            <th>{{ 'dashboard.deal' | t }}</th>
+            <th>{{ 'common.stage' | t }}</th>
+            <th>{{ 'common.value' | t }}</th>
+            <th>{{ 'dashboard.probability' | t }}</th>
+            <th>{{ 'dashboard.closeDate' | t }}</th>
+            <th>{{ 'common.owner' | t }}</th>
             <th></th>
           </tr>
         </thead>
@@ -93,17 +93,17 @@
                   }
                 </select>
               </td>
-              <td><b>{{ deal.value | currency: 'JOD' : 'symbol-narrow' : '1.0-0' }}</b></td>
+              <td><b>{{ deal.value | lmoney }}</b></td>
               <td><span class="prob"><i><b [style.width.%]="deal.probability"></b></i>{{ deal.probability }}%</span></td>
-              <td>{{ deal.expectedCloseDate | date: 'd MMM y' }}</td>
+              <td>{{ deal.expectedCloseDate | ldate: 'short' }}</td>
               <td><i class="owner">{{ initials(deal.owner) }}</i></td>
               <td class="row-actions">
-                <button (click)="openEdit(deal)" title="تعديل">✎</button>
-                <button class="danger" (click)="remove(deal)" title="حذف">🗑</button>
+                <button (click)="openEdit(deal)" [title]="'common.edit' | t">✎</button>
+                <button class="danger" (click)="remove(deal)" [title]="'common.delete' | t">🗑</button>
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="7" class="empty">لا توجد صفقات.</td></tr>
+            <tr><td colspan="7" class="empty">{{ 'deals.empty' | t }}</td></tr>
           }
         </tbody>
       </table>
@@ -115,30 +115,30 @@
   <div class="modal-backdrop" (click)="showForm.set(false)">
     <form class="crm-form" (click)="$event.stopPropagation()" (ngSubmit)="save()">
       <div>
-        <h2>{{ editingId() ? 'تعديل الصفقة' : 'إضافة صفقة' }}</h2>
+        <h2>{{ (editingId() ? 'deals.formEdit' : 'deals.formAdd') | t }}</h2>
         <button type="button" (click)="showForm.set(false)">×</button>
       </div>
       <label>
-        اسم الصفقة
-        <input required name="name" [ngModel]="form().name" (ngModelChange)="update('name', $event)" placeholder="مثال: تمويل رأس المال" />
+        {{ 'deals.name' | t }}
+        <input required name="name" [ngModel]="form().name" (ngModelChange)="update('name', $event)" [placeholder]="'deals.namePlaceholder' | t" />
       </label>
       <div class="pair">
         <label>
-          الشركة
-          <input required name="company" [ngModel]="form().company" (ngModelChange)="update('company', $event)" placeholder="اسم الشركة" />
+          {{ 'common.company' | t }}
+          <input required name="company" [ngModel]="form().company" (ngModelChange)="update('company', $event)" [placeholder]="'leads.companyPlaceholder' | t" />
         </label>
         <label>
-          جهة الاتصال
-          <input name="contact" [ngModel]="form().contact" (ngModelChange)="update('contact', $event)" placeholder="اسم المسؤول" />
+          {{ 'deals.contact' | t }}
+          <input name="contact" [ngModel]="form().contact" (ngModelChange)="update('contact', $event)" [placeholder]="'deals.contactPlaceholder' | t" />
         </label>
       </div>
       <div class="pair">
         <label>
-          القيمة (د.أ)
+          {{ 'deals.valueLabel' | t }}
           <input type="number" min="1" name="value" [ngModel]="form().value" (ngModelChange)="update('value', +$event)" />
         </label>
         <label>
-          المرحلة
+          {{ 'common.stage' | t }}
           <select name="stage" [ngModel]="form().stage" (ngModelChange)="update('stage', $event)">
             @for (stage of stages; track stage) {
               <option [value]="stage">{{ stageLabel(stage) }}</option>
@@ -148,11 +148,11 @@
       </div>
       <div class="pair">
         <label>
-          الاحتمالية ({{ form().probability }}%)
+          {{ 'deals.probabilityLabel' | t: { value: form().probability } }}
           <input type="range" min="0" max="100" step="5" name="probability" [ngModel]="form().probability" (ngModelChange)="update('probability', +$event)" />
         </label>
         <label>
-          تاريخ الإغلاق المتوقع
+          {{ 'deals.closeDate' | t }}
           <input type="date" name="expectedCloseDate" [ngModel]="form().expectedCloseDate" (ngModelChange)="update('expectedCloseDate', $event)" />
         </label>
       </div>
@@ -160,8 +160,8 @@
         <p class="form-error">{{ message }}</p>
       }
       <footer>
-        <button type="button" (click)="showForm.set(false)">إلغاء</button>
-        <button type="submit" [disabled]="store.loading()">حفظ الصفقة</button>
+        <button type="button" (click)="showForm.set(false)">{{ 'common.cancel' | t }}</button>
+        <button type="submit" [disabled]="store.loading()">{{ 'deals.saveDeal' | t }}</button>
       </footer>
     </form>
   </div>

@@ -1,13 +1,25 @@
 # Credit Plus CRM
 
-A small sales CRM: an ASP.NET Core 10 API and an Angular 21 single-page app with an Arabic, right-to-left interface.
+A small sales CRM: an ASP.NET Core 10 API backed by PostgreSQL, and an Angular 21 single-page app that speaks Arabic (RTL) and English (LTR) with light and dark themes.
 
 ## Layout
 
 | Path | What it is |
 | --- | --- |
-| `src/CreditPlus.Crm.Api` | REST API, JSON file storage, OpenAPI document |
-| `src/crm-web` | Angular client (dashboard, leads, deals, activities) |
+| `src/CreditPlus.Crm.Api` | REST API, EF Core + PostgreSQL, OpenAPI document |
+| `src/crm-web` | Angular client (dashboard, leads, deals, activities, reports, settings) |
+
+## Prerequisites
+
+- .NET 10 SDK
+- Node.js 20+
+- PostgreSQL 17 with a database named `crm-db`
+
+Create the database once:
+
+```bash
+psql -U postgres -h localhost -p 5433 -c 'CREATE DATABASE "crm-db";'
+```
 
 ## Running it
 
@@ -28,7 +40,26 @@ Open <http://localhost:4200>. If the API is not running, the app shows a banner 
 
 ## Data
 
-Everything lives in one file, `src/CreditPlus.Crm.Api/App_Data/crm.json`, created and seeded on first run and written through a temp file so an interrupted save cannot corrupt it. Delete the file to reset to the seed data. It is git-ignored.
+Data lives in PostgreSQL. On startup the API applies any pending EF Core migrations and seeds demo rows into empty tables, so a fresh `crm-db` is usable immediately.
+
+The connection string is `ConnectionStrings:CrmDatabase` in `appsettings.json`; it points at `localhost:5433` because that is the port this PostgreSQL install listens on (check `postgresql.conf` if yours differs — the default is 5432).
+
+Schema changes go through EF Core migrations:
+
+```bash
+cd src/CreditPlus.Crm.Api
+dotnet ef migrations add <Name>
+```
+
+To start over, drop and recreate `crm-db`; the next run re-creates and re-seeds it.
+
+## Languages and themes
+
+The interface ships in Arabic and English. Every string lives in `src/crm-web/src/app/core/i18n/ar.ts` and `en.ts` — never inline in a template — and `en.ts` is typed against `ar.ts`, so a missing or stray key fails the build. Templates read strings through the `t` pipe.
+
+Switching language updates `<html lang>` and `<html dir>`, flips the layout between RTL and LTR, and reformats dates, numbers, and currency. Because Angular resolves `LOCALE_ID` once per injector, dates and money go through the `ldate` and `lmoney` pipes, which format via `Intl` against the current language signal and therefore react to a switch without a reload.
+
+The light and dark themes are CSS custom properties defined on `:root` and `[data-theme="dark"]` in `src/crm-web/src/styles.scss`. Both choices persist in `localStorage`; the theme falls back to the system preference on first visit.
 
 ## API
 

@@ -2,6 +2,7 @@ using CreditPlus.Crm.Api.Application;
 using CreditPlus.Crm.Api.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,10 +18,16 @@ builder.Services.AddCors(options => options.AddPolicy("crm-web", policy => polic
     .AllowAnyHeader()
     .AllowAnyMethod()));
 
-builder.Services.AddSingleton<ICrmStore, JsonCrmStore>();
-builder.Services.AddSingleton<ICrmDashboardService, CrmDashboardService>();
+builder.Services.AddDbContext<CrmDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("CrmDatabase")));
+
+// Scoped: each request gets its own DbContext.
+builder.Services.AddScoped<ICrmStore, PostgresCrmStore>();
+builder.Services.AddScoped<ICrmDashboardService, CrmDashboardService>();
 
 var app = builder.Build();
+
+CrmDbSeeder.MigrateAndSeed(app.Services);
 
 // Translate store-level failures into ProblemDetails so controllers stay free of try/catch.
 app.UseExceptionHandler(handler => handler.Run(async context =>

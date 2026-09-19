@@ -1,8 +1,10 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CrmStore } from '../core/crm-store.service';
-import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS, Activity } from '../core/crm.models';
+import { I18nService, TranslationKey } from '../core/i18n/i18n.service';
+import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { LocaleDatePipe } from '../core/i18n/format.pipes';
+import { ACTIVITY_TYPES, Activity } from '../core/crm.models';
 
 interface ActivityForm {
   title: string;
@@ -25,11 +27,12 @@ const blankActivity = (): ActivityForm => {
 
 @Component({
   selector: 'app-activities-page',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, TranslatePipe, LocaleDatePipe],
   templateUrl: './activities-page.html',
 })
 export class ActivitiesPage {
   protected readonly store = inject(CrmStore);
+  private readonly i18n = inject(I18nService);
   protected readonly types = ACTIVITY_TYPES;
 
   protected readonly filter = signal<'all' | 'open' | 'done'>('open');
@@ -60,7 +63,7 @@ export class ActivitiesPage {
   }
 
   protected typeLabel(type: string): string {
-    return ACTIVITY_TYPE_LABELS[type] ?? type;
+    return this.i18n.translate(`type.${type}` as TranslationKey);
   }
 
   protected typeIcon(type: string): string {
@@ -101,7 +104,7 @@ export class ActivitiesPage {
   }
 
   protected async remove(activity: Activity): Promise<void> {
-    if (confirm(`حذف المهمة "${activity.title}"؟`)) {
+    if (confirm(this.i18n.translate('common.confirmDelete', { name: activity.title }))) {
       await this.store.deleteActivity(activity.id);
     }
   }

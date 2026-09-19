@@ -1,0 +1,97 @@
+<section class="heading">
+  <div>
+    <label>{{ 'reports.eyebrow' | t }}</label>
+    <h1>{{ 'reports.title' | t }}</h1>
+    <p>{{ 'reports.subtitle' | t }}</p>
+  </div>
+</section>
+
+<section class="stats">
+  <article>
+    <p>{{ 'reports.totalLeads' | t }}</p>
+    <h2>{{ totals().leads }}</h2>
+  </article>
+  <article>
+    <p>{{ 'reports.totalDeals' | t }}</p>
+    <h2>{{ totals().deals }}</h2>
+  </article>
+  <article>
+    <p>{{ 'reports.totalValue' | t }}</p>
+    <h2>{{ totals().totalValue | lmoney }}</h2>
+  </article>
+  <article>
+    <p>{{ 'reports.winRate' | t }}</p>
+    <h2>{{ totals().winRate }}%</h2>
+  </article>
+</section>
+
+<section class="grid">
+  <article class="panel">
+    <div class="panel-title">
+      <div><h2>{{ 'reports.byStage' | t }}</h2></div>
+    </div>
+    <div class="chart">
+      @for (slice of byStage(); track slice.label) {
+        <div class="stage">
+          <span>
+            <i [class]="slice.accent"></i>
+            <b>{{ slice.label }}</b>
+            <small>{{ slice.count }}</small>
+          </span>
+          <div><i [class]="slice.accent" [style.width.%]="slice.percent"></i></div>
+          <strong>{{ slice.value | lmoney }}</strong>
+        </div>
+      } @empty {
+        <p class="empty">{{ 'reports.noData' | t }}</p>
+      }
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-title">
+      <div><h2>{{ 'reports.totals' | t }}</h2></div>
+    </div>
+    <div class="kv">
+      <div><span>{{ 'reports.avgDeal' | t }}</span><b>{{ totals().average | lmoney }}</b></div>
+      <div><span>{{ 'reports.openTasks' | t }}</span><b>{{ totals().openTasks }}</b></div>
+      <div><span>{{ 'reports.totalDeals' | t }}</span><b>{{ totals().deals }}</b></div>
+      <div><span>{{ 'reports.totalLeads' | t }}</span><b>{{ totals().leads }}</b></div>
+    </div>
+  </article>
+</section>
+
+<section class="grid">
+  <article class="panel">
+    <div class="panel-title">
+      <div><h2>{{ 'reports.bySource' | t }}</h2></div>
+    </div>
+    <div class="chart">
+      @for (slice of bySource(); track slice.label) {
+        <div class="stage">
+          <span><i [class]="slice.accent"></i><b>{{ slice.label }}</b></span>
+          <div><i [class]="slice.accent" [style.width.%]="slice.percent"></i></div>
+          <strong>{{ slice.count }}</strong>
+        </div>
+      } @empty {
+        <p class="empty">{{ 'reports.noData' | t }}</p>
+      }
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-title">
+      <div><h2>{{ 'reports.byStatus' | t }}</h2></div>
+    </div>
+    <div class="chart">
+      @for (slice of byStatus(); track slice.label) {
+        <div class="stage">
+          <span><i [class]="slice.accent"></i><b>{{ slice.label }}</b></span>
+          <div><i [class]="slice.accent" [style.width.%]="slice.percent"></i></div>
+          <strong>{{ slice.count }}</strong>
+        </div>
+      } @empty {
+        <p class="empty">{{ 'reports.noData' | t }}</p>
+      }
+    </div>
+  </article>
+</section>

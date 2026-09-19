@@ -1,39 +1,60 @@
-import { CurrencyPipe, DatePipe, NgClass } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CrmStore } from '../core/crm-store.service';
-import { ACTIVITY_TYPE_LABELS, Activity, STAGE_LABELS } from '../core/crm.models';
+import { I18nService, TranslationKey } from '../core/i18n/i18n.service';
+import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { LocaleDatePipe, LocaleMoneyPipe } from '../core/i18n/format.pipes';
+import { Activity } from '../core/crm.models';
+
+type Period = 'week' | 'month' | 'quarter';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [NgClass, CurrencyPipe, DatePipe, RouterLink],
+  imports: [NgClass, RouterLink, TranslatePipe, LocaleDatePipe, LocaleMoneyPipe],
   templateUrl: './dashboard-page.html',
 })
 export class DashboardPage {
   protected readonly store = inject(CrmStore);
+  protected readonly i18n = inject(I18nService);
 
-  protected readonly periods = ['هذا الأسبوع', 'هذا الشهر', 'ربع سنوي'];
   protected readonly today = new Date();
+  protected readonly period = signal<Period>('week');
 
+  protected readonly periods: { id: Period; key: TranslationKey }[] = [
+    { id: 'week', key: 'dashboard.periodWeek' },
+    { id: 'month', key: 'dashboard.periodMonth' },
+    { id: 'quarter', key: 'dashboard.periodQuarter' },
+  ];
+
+  /** The period buttons filter open deals by how soon they are expected to close. */
   protected readonly visibleDeals = computed(() => {
     const term = this.store.search().trim().toLowerCase();
-    const deals = this.store.dashboard().deals;
-    return term
-      ? deals.filter((deal) =>
-          `${deal.company} ${deal.contact} ${deal.name} ${this.stageLabel(deal.stage)}`
-            .toLowerCase()
-            .includes(term),
-        )
-      : deals;
+    const horizon = { week: 7, month: 31, quarter: 92 }[this.period()];
+    const limit = new Date();
+    limit.setDate(limit.getDate() + horizon);
+
+    return this.store.dashboard().deals.filter((deal) => {
+      const withinPeriod = new Date(deal.expectedCloseDate) <= limit;
+      if (!withinPeriod) {
+        return false;
+      }
+      if (!term) {
+        return true;
+      }
+      return `${deal.company} ${deal.contact} ${deal.name} ${this.stageLabel(deal.stage)}`
+        .toLowerCase()
+        .includes(term);
+    });
   });
 
   protected readonly stats = computed(() => {
     const dashboard = this.store.dashboard();
     return [
-      { label: 'عملاء محتملون جدد', value: dashboard.newLeads.toString(), unit: '', icon: '♙', tone: 'sky' },
-      { label: 'قيمة خط المبيعات', value: this.money(dashboard.pipelineValue), unit: 'د.أ', icon: '⌁', tone: 'violet' },
-      { label: 'صفقات مغلقة هذا الشهر', value: this.money(dashboard.wonThisMonth), unit: 'د.أ', icon: '✦', tone: 'mint' },
-      { label: 'معدل التحويل', value: `${dashboard.conversionRate}%`, unit: '', icon: '◎', tone: 'amber' },
+      { key: 'dashboard.statNewLeads' as TranslationKey, value: dashboard.newLeads.toString(), unit: '', icon: '♙', tone: 'sky' },
+      { key: 'dashboard.statPipeline' as TranslationKey, value: this.money(dashboard.pipelineValue), unit: 'JOD', icon: '⌁', tone: 'violet' },
+      { key: 'dashboard.statWon' as TranslationKey, value: this.money(dashboard.wonThisMonth), unit: 'JOD', icon: '✦', tone: 'mint' },
+      { key: 'dashboard.statConversion' as TranslationKey, value: `${dashboard.conversionRate}%`, unit: '', icon: '◎', tone: 'amber' },
     ];
   });
 
@@ -47,11 +68,7 @@ export class DashboardPage {
   }
 
   protected stageLabel(stage: string): string {
-    return STAGE_LABELS[stage as keyof typeof STAGE_LABELS] ?? stage;
-  }
-
-  protected typeLabel(type: string): string {
-    return ACTIVITY_TYPE_LABELS[type] ?? type;
+    return this.i18n.translate(`stage.${stage}` as TranslationKey);
   }
 
   protected typeIcon(type: string): string {
@@ -73,6 +90,9 @@ export class DashboardPage {
   }
 
   protected money(value: number): string {
-    return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+    return new Intl.NumberFormat(this.i18n.locale(), {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value);
   }
 }

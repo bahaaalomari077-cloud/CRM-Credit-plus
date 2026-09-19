@@ -1,0 +1,62 @@
+<section class="heading">
+  <div>
+    <label>{{ 'settings.eyebrow' | t }}</label>
+    <h1>{{ 'settings.title' | t }}</h1>
+    <p>{{ 'settings.subtitle' | t }}</p>
+  </div>
+</section>
+
+<section class="grid">
+  <article class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>{{ 'settings.appearance' | t }}</h2>
+        <p>{{ 'settings.appearanceSub' | t }}</p>
+      </div>
+    </div>
+    <div class="choice-row">
+      <button [class.on]="themes.theme() === 'light'" (click)="setTheme('light')">
+        ☀ {{ 'app.themeLight' | t }}
+      </button>
+      <button [class.on]="themes.theme() === 'dark'" (click)="setTheme('dark')">
+        ☾ {{ 'app.themeDark' | t }}
+      </button>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>{{ 'app.language' | t }}</h2>
+        <p>{{ 'settings.languageSub' | t }}</p>
+      </div>
+    </div>
+    <div class="choice-row">
+      <button [class.on]="i18n.language() === 'ar'" (click)="setLanguage('ar')">العربية</button>
+      <button [class.on]="i18n.language() === 'en'" (click)="setLanguage('en')">English</button>
+    </div>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-title">
+    <div><h2>{{ 'settings.dataSection' | t }}</h2></div>
+  </div>
+  <div class="kv">
+    <div>
+      <span>{{ 'settings.apiUrl' | t }}</span>
+      <b class="ltr">{{ apiUrl }}</b>
+    </div>
+    <div>
+      <span>{{ 'settings.connection' | t }}</span>
+      <b [class.ok-text]="!store.offline()" [class.bad-text]="store.offline()">
+        {{ (store.offline() ? 'settings.disconnected' : 'settings.connected') | t }}
+      </b>
+    </div>
+  </div>
+  <div class="choice-row">
+    <button (click)="checkConnection()" [disabled]="checking()">
+      {{ (checking() ? 'app.loading' : 'settings.checkConnection') | t }}
+    </button>
+  </div>
+</section>

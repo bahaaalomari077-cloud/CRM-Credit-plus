@@ -82,31 +82,8 @@ export interface CreateActivityRequest {
   dueAt: string;
 }
 
-/** Arabic labels for the API's English enum values, kept in one place. */
-export const STAGE_LABELS: Record<DealStage, string> = {
-  Qualified: 'مؤهلة',
-  Proposal: 'عرض سعر',
-  Negotiation: 'تفاوض',
-  Won: 'مغلقة بنجاح',
-  Lost: 'مغلقة خاسرة',
-};
-
-export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
-  New: 'جديد',
-  Contacted: 'تم التواصل',
-  Qualified: 'مؤهل',
-  Converted: 'تم التحويل',
-  Lost: 'خسارة',
-};
-
-export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
-  Call: 'مكالمة',
-  Email: 'بريد',
-  Meeting: 'اجتماع',
-  Task: 'مهمة',
-};
-
 export const DEAL_STAGES: DealStage[] = ['Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
 export const OPEN_STAGES: DealStage[] = ['Qualified', 'Proposal', 'Negotiation'];
 export const LEAD_STATUSES: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Converted', 'Lost'];
 export const ACTIVITY_TYPES = ['Call', 'Email', 'Meeting', 'Task'];
+export const LEAD_SOURCES = ['Website', 'Referral', 'Campaign', 'Social media', 'Event'];

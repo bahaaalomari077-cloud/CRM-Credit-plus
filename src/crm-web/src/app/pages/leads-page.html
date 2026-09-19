@@ -1,39 +1,39 @@
 <section class="heading">
   <div>
-    <label>إدارة العملاء</label>
-    <h1>العملاء المحتملون</h1>
-    <p>أضف، تابع، ونظم كل فرص البيع من مكان واحد.</p>
+    <label>{{ 'leads.eyebrow' | t }}</label>
+    <h1>{{ 'leads.title' | t }}</h1>
+    <p>{{ 'leads.subtitle' | t }}</p>
   </div>
-  <button class="quick" (click)="openCreate()">+ إضافة عميل</button>
+  <button class="quick" (click)="openCreate()">{{ 'leads.add' | t }}</button>
 </section>
 
 <section class="panel leads">
   <div class="panel-title">
     <div>
-      <h2>سجل العملاء</h2>
-      <p>{{ store.leads().length }} عميل محفوظين في قاعدة بيانات المشروع</p>
+      <h2>{{ 'leads.record' | t }}</h2>
+      <p>{{ 'leads.recordSub' | t: { count: store.leads().length } }}</p>
     </div>
     <div class="toolbar">
       <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); reload()" name="statusFilter">
-        <option value="">كل الحالات</option>
+        <option value="">{{ 'leads.allStatuses' | t }}</option>
         @for (status of statuses; track status) {
           <option [value]="status">{{ statusLabel(status) }}</option>
         }
       </select>
-      <a (click)="reload()">تحديث ↻</a>
+      <a (click)="reload()">{{ 'common.refresh' | t }} ↻</a>
     </div>
   </div>
   <div class="table">
     <table>
       <thead>
         <tr>
-          <th>الاسم</th>
-          <th>الشركة</th>
-          <th>البريد الإلكتروني</th>
-          <th>الهاتف</th>
-          <th>المصدر</th>
-          <th>الحالة</th>
-          <th>أُضيف في</th>
+          <th>{{ 'leads.name' | t }}</th>
+          <th>{{ 'common.company' | t }}</th>
+          <th>{{ 'leads.email' | t }}</th>
+          <th>{{ 'leads.phone' | t }}</th>
+          <th>{{ 'leads.source' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'leads.createdAt' | t }}</th>
           <th></th>
         </tr>
       </thead>
@@ -42,18 +42,18 @@
           <tr>
             <td><b>{{ lead.fullName }}</b></td>
             <td>{{ lead.company }}</td>
-            <td><span class="ltr">{{ lead.email || '—' }}</span></td>
-            <td><span class="ltr">{{ lead.phone || '—' }}</span></td>
-            <td>{{ lead.source }}</td>
+            <td><span class="ltr">{{ lead.email || ('common.none' | t) }}</span></td>
+            <td><span class="ltr">{{ lead.phone || ('common.none' | t) }}</span></td>
+            <td>{{ sourceLabel(lead.source) }}</td>
             <td><em [class]="lead.status.toLowerCase()">{{ statusLabel(lead.status) }}</em></td>
-            <td>{{ lead.createdAt | date: 'd MMM' }}</td>
+            <td>{{ lead.createdAt | ldate: 'short' }}</td>
             <td class="row-actions">
-              <button (click)="openEdit(lead)" title="تعديل">✎</button>
-              <button class="danger" (click)="remove(lead)" title="حذف">🗑</button>
+              <button (click)="openEdit(lead)" [title]="'common.edit' | t">✎</button>
+              <button class="danger" (click)="remove(lead)" [title]="'common.delete' | t">🗑</button>
             </td>
           </tr>
         } @empty {
-          <tr><td colspan="8" class="empty">لا يوجد عملاء بعد. أضف أول فرصة بيع الآن.</td></tr>
+          <tr><td colspan="8" class="empty">{{ 'leads.empty' | t }}</td></tr>
         }
       </tbody>
     </table>
@@ -64,31 +64,31 @@
   <div class="modal-backdrop" (click)="showForm.set(false)">
     <form class="crm-form" (click)="$event.stopPropagation()" (ngSubmit)="save()">
       <div>
-        <h2>{{ editingId() ? 'تعديل العميل' : 'إضافة عميل محتمل' }}</h2>
+        <h2>{{ (editingId() ? 'leads.formEdit' : 'leads.formAdd') | t }}</h2>
         <button type="button" (click)="showForm.set(false)">×</button>
       </div>
       <label>
-        الاسم الكامل
+        {{ 'leads.fullName' | t }}
         <input
           required
           name="fullName"
           [ngModel]="form().fullName"
           (ngModelChange)="update('fullName', $event)"
-          placeholder="مثال: نور الحداد"
+          [placeholder]="'leads.namePlaceholder' | t"
         />
       </label>
       <label>
-        الشركة
+        {{ 'common.company' | t }}
         <input
           required
           name="company"
           [ngModel]="form().company"
           (ngModelChange)="update('company', $event)"
-          placeholder="اسم الشركة"
+          [placeholder]="'leads.companyPlaceholder' | t"
         />
       </label>
       <label>
-        البريد الإلكتروني
+        {{ 'leads.email' | t }}
         <input
           type="email"
           name="email"
@@ -98,21 +98,21 @@
         />
       </label>
       <label>
-        رقم الهاتف
+        {{ 'leads.phone' | t }}
         <input name="phone" [ngModel]="form().phone" (ngModelChange)="update('phone', $event)" placeholder="+962 ..." />
       </label>
       <div class="pair">
         <label>
-          المصدر
+          {{ 'leads.source' | t }}
           <select name="source" [ngModel]="form().source" (ngModelChange)="update('source', $event)">
             @for (source of sources; track source) {
-              <option [value]="source">{{ source }}</option>
+              <option [value]="source">{{ sourceLabel(source) }}</option>
             }
           </select>
         </label>
         @if (editingId()) {
           <label>
-            الحالة
+            {{ 'common.status' | t }}
             <select name="status" [ngModel]="form().status" (ngModelChange)="update('status', $event)">
               @for (status of statuses; track status) {
                 <option [value]="status">{{ statusLabel(status) }}</option>
@@ -125,8 +125,8 @@
         <p class="form-error">{{ message }}</p>
       }
       <footer>
-        <button type="button" (click)="showForm.set(false)">إلغاء</button>
-        <button type="submit" [disabled]="store.loading()">حفظ العميل</button>
+        <button type="button" (click)="showForm.set(false)">{{ 'common.cancel' | t }}</button>
+        <button type="submit" [disabled]="store.loading()">{{ 'leads.saveLead' | t }}</button>
       </footer>
     </form>
   </div>

@@ -1,8 +1,10 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CrmStore } from '../core/crm-store.service';
-import { LEAD_STATUSES, LEAD_STATUS_LABELS, Lead, LeadStatus } from '../core/crm.models';
+import { I18nService, TranslationKey } from '../core/i18n/i18n.service';
+import { TranslatePipe } from '../core/i18n/translate.pipe';
+import { LocaleDatePipe } from '../core/i18n/format.pipes';
+import { LEAD_SOURCES, LEAD_STATUSES, Lead, LeadStatus } from '../core/crm.models';
 
 interface LeadForm {
   fullName: string;
@@ -24,13 +26,14 @@ const blankLead = (): LeadForm => ({
 
 @Component({
   selector: 'app-leads-page',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, TranslatePipe, LocaleDatePipe],
   templateUrl: './leads-page.html',
 })
 export class LeadsPage {
   protected readonly store = inject(CrmStore);
+  private readonly i18n = inject(I18nService);
   protected readonly statuses = LEAD_STATUSES;
-  protected readonly sources = ['Website', 'Referral', 'Campaign', 'Social media', 'Event'];
+  protected readonly sources = LEAD_SOURCES;
 
   protected readonly statusFilter = signal('');
   protected readonly showForm = signal(false);
@@ -42,7 +45,11 @@ export class LeadsPage {
   }
 
   protected statusLabel(status: string): string {
-    return LEAD_STATUS_LABELS[status as LeadStatus] ?? status;
+    return this.i18n.translate(`status.${status}` as TranslationKey);
+  }
+
+  protected sourceLabel(source: string): string {
+    return this.i18n.translate(`source.${source}` as TranslationKey);
   }
 
   protected reload(): void {
@@ -86,7 +93,7 @@ export class LeadsPage {
   }
 
   protected async remove(lead: Lead): Promise<void> {
-    if (confirm(`حذف العميل "${lead.fullName}"؟`)) {
+    if (confirm(this.i18n.translate('common.confirmDelete', { name: lead.fullName }))) {
       await this.store.deleteLead(lead.id);
     }
   }
