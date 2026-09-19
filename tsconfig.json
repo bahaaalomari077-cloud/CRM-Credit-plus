@@ -1,0 +1,30 @@
+{
+  // The Angular application lives in src/crm-web, so opening this repository at
+  // the root leaves the editor's language service with no tsconfig to discover.
+  // It then cannot resolve component imports and reports phantom template
+  // errors such as "No pipe found with name 't'" while `ng build` is clean.
+  //
+  // This config exists for the editor only. The build runs from src/crm-web and
+  // uses that project's own tsconfig.app.json.
+  "extends": "./src/crm-web/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": []
+  },
+  "include": [
+    "src/crm-web/src/**/*.ts",
+    "src/crm-web/src/**/*.html"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist",
+    "**/.angular",
+    "**/bin",
+    "**/obj"
+  ],
+  "angularCompilerOptions": {
+    // Templates are type-checked as strictly as the app itself, so the editor
+    // reports the same problems the build would, and no others.
+    "strictTemplates": true
+  }
+}

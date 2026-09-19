@@ -1,0 +1,34 @@
+{
+  // The Angular app lives in src/crm-web, not at the repository root. Without
+  // this the language service cannot find a tsconfig from the workspace root
+  // and reports phantom errors in templates ("No pipe found with name 't'")
+  // even though `ng build` is clean.
+  "angular.enable-strict-mode-prompt": false,
+  "typescript.tsdk": "src/crm-web/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // Keep the editor's formatting in step with the Prettier config the project
+  // already carries, so saving a file does not create unrelated diffs.
+  "[html]": { "editor.formatOnSave": false },
+  "[typescript]": { "editor.formatOnSave": false },
+
+  "files.associations": {
+    "*.html": "html"
+  },
+
+  // Angular writes build output and caches here; indexing them is noise.
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.angular/**": true,
+    "**/dist/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.angular": true,
+    "**/dist": true,
+    "**/bin": true,
+    "**/obj": true
+  }
+}
